@@ -3,7 +3,7 @@ project:
   output-dir: docs
 
 website:
-  title: "Data Science, Machine Learning and Statistical Model"
+  title: "Data Science, Machine Learning and Statistical Models"
   navbar:
     right:
       - about.qmd
