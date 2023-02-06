@@ -1,0 +1,18 @@
+project:
+  type: website
+  output-dir: docs
+
+website:
+  title: "Data Science, Machine Learning and Statistical Models"
+  navbar:
+    right:
+      - about.qmd
+      - icon: github
+        href: https://github.com/jeancmaia
+format:
+  html:
+    theme: sandstone
+    css: styles.css
+
+
+
