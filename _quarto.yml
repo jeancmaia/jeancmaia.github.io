@@ -3,7 +3,7 @@ project:
   output-dir: docs
 
 website:
-  title: "Jean Carlos's Data Science Blog"
+  title: "Data Science, Machine Learning and Statistical Model"
   navbar:
     right:
       - about.qmd
@@ -11,7 +11,7 @@ website:
         href: https://github.com/jeancmaia
 format:
   html:
-    theme: journal
+    theme: sandstone
     css: styles.css
 
 

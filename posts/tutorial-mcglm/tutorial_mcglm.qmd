@@ -330,7 +330,7 @@ modelresults = MCGLM(
 [modelresults.summary()]
 ```
 
-By the `pAIC`, the adjustment with `Poisson Tweedie` power set 1.263 is lightly better than `Poisson` 1. It points out that the distribution `Poisson Tweedie` is the best option for this data learning.
+By the `pAIC`, the adjustment with `Poisson Tweedie` power set 1.2895 is lightly better than `Poisson` 1. It points out that the distribution `Poisson Tweedie` is the best option for this data learning.
 
 ##### 3. A bounded analysis
 
