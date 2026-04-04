@@ -219,19 +219,13 @@ window.Quarto = {
 
 
 
-<section id="price-curves-and-agents" class="level1">
-<h1>Price, Curves, and Agents</h1>
-<section id="a-data-scientists-guide-to-microeconomics-from-demand-theory-to-agentic-pricing" class="level2">
-<h2 class="anchored" data-anchor-id="a-data-scientists-guide-to-microeconomics-from-demand-theory-to-agentic-pricing">A Data Scientist’s Guide to Microeconomics — From Demand Theory to Agentic Pricing</h2>
+# Price, Curves, and Agents## A Data Scientist’s Guide to Microeconomics — From Demand Theory to Agentic Pricing
 <hr>
-<p>Pricing is one of the few problems where getting the model right is not enough.</p>
-<p>Price is not a feature — it is a decision variable that feeds back into the system the moment it is set. Standard ML pipelines are not built for that. They assume inputs are given and the world holds still between training and inference. Neither assumption holds in pricing.</p>
-<p>Microeconomics exists precisely to reason about this. It is the discipline that put price at the centre of its inquiry and spent two centuries working out the implications. This article connects that theory to the algorithmic toolkit data scientists actually use — not as an academic exercise, but because the connection is load-bearing: it changes how you build, evaluate, and trust a pricing system.</p>
+Data science and microeconomics have their own languages and tools, but they often find themselves exploring the same questions. Price is a natural place to explore how the two connect. This article walks through microeconomic fundamentals with a data scientist in mind, and builds toward an agentic pricing system that draws from both worlds.
 <hr>
 <blockquote class="blockquote">
-<p><em>Bayesian workflow:</em> model code follows <code>.skills/bayesian-workflow/SKILL.md</code>. Consult it before modifying any PyMC block.</p>
+<p><em>Bayesian workflow:</em> model code follows <code>.skills/bayesian-workflow/SKILL.md</code>. Consult it before modifying any PyMC block.<strong>Stack:</strong> PyMC 5 · ArviZ · EconML (Double ML) · scikit-learn · statsmodels</p>
 </blockquote>
-<p><strong>Stack:</strong> PyMC 5 · ArviZ · EconML (Double ML) · scikit-learn · statsmodels</p>
 <div id="aeb3492d2513" class="cell" data-execution_count="2">
 <details class="code-fold">
 <summary>Code</summary>
@@ -276,8 +270,6 @@ Ready.</code></pre>
 </div>
 </div>
 <hr>
-</section>
-</section>
 <section id="introduction-price-is-endogenous" class="level1">
 <h1>Introduction — Price Is Endogenous</h1>
 <p>Let us start with a definition that will anchor everything that follows.</p>
