@@ -2,7 +2,6 @@
   {
     "listing": "/index.html",
     "items": [
-      "/posts/manifest.html",
       "/posts/tutorial-mcglm/tutorial_mcglm.html",
       "/posts/price-curves-agents/price_curves_agents.html"
     ]
