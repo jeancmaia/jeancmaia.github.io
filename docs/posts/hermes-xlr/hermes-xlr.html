@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.36">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="dcterms.date" content="2026-07-02">
+<meta name="description" content="Prefill, decode, and the memory wall — an optimization-first runtime for local LLM inference on consumer NVIDIA GPUs.">
+
+<title>Breaking the Decode Wall: Maximizing Local NVIDIA GPUs with Hermes-XLR – Faoot’s Lab</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-845c23b38eaddc0f92fda52bfe77a8c8.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-c51defa157ccb18095ba4b35bf459923.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="nav-fixed fullcontent quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Faoot’s Lab</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">Jean Carlos Faoot Maia</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/jeancmaia"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Breaking the Decode Wall: Maximizing Local NVIDIA GPUs with Hermes-XLR</h1>
+                  <div>
+        <div class="description">
+          Prefill, decode, and the memory wall — an optimization-first runtime for local LLM inference on consumer NVIDIA GPUs.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">llm</div>
+                <div class="quarto-category">inference</div>
+                <div class="quarto-category">machine-learning</div>
+                <div class="quarto-category">nvidia</div>
+                <div class="quarto-category">optimization</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">July 2, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<section id="breaking-the-decode-wall-maximizing-local-nvidia-gpus-with-hermes-xlr" class="level1">
+<h1>Breaking the Decode Wall: Maximizing Local NVIDIA GPUs with Hermes-XLR</h1>
+<p>Running a Large Language Model (LLM) on local hardware is a real situation for many practitioners, whether for economic or privacy reasons. But it usually means a constant battle against physical constraints. Even with a high-end NVIDIA GPU, generation often breaks up because most runtimes fail to saturate the specific hardware they occupy. To overcome this, we must look past “intelligence” and into the <strong>mathematical anatomy of the inference turn</strong> through the lens of machinery efficiency.</p>
+<p>This post introduces <a href="https://github.com/jeancmaia/hermes-xlr"><strong>Hermes-XLR</strong></a>, an optimization-first inference runtime built to maximize throughput on consumer NVIDIA GPUs. Each section below builds the theoretical groundwork — from the prefill/decode roofline to speculative decoding — that motivates the runtime’s architecture. The <a href="https://github.com/jeancmaia/hermes-xlr">repository</a> implements a three-stage optimization pipeline: <strong>(i)</strong> tiered prefix caching for zero-overhead reuse of system prompts, <strong>(ii)</strong> Sequential Monte Carlo speculative decoding (SMC-SD) that adapts its particle count to available VRAM, and <strong>(iii)</strong> latency hiding via async persistence to overlap I/O with decode cycles.</p>
+<section id="the-anatomy-of-an-inference-turn" class="level2">
+<h2 class="anchored" data-anchor-id="the-anatomy-of-an-inference-turn">1. The Anatomy of an Inference Turn</h2>
+<p>LLM inference is not a monolithic task; it is a tale of two workloads with diametrically opposed hardware requirements. Every turn divides into two distinct phases:</p>
+<div style="display: flex; justify-content: space-between; gap: 12px;">
+<div style="flex: 1; border: 1px solid #4CAF50; border-radius: 8px; padding: 12px; background: #f1f8e9;">
+<h4 style="text-align: center; color: #2E7D32;" class="anchored">
+⚡ Prefill Phase (Compute-Bound)
+</h4>
+<svg width="100%" height="180" viewbox="0 0 320 180" xmlns="http://www.w3.org/2000/svg">
+</svg><p><rect x="10" y="10" width="60" height="80" rx="4" fill="#A5D6A7" stroke="#388E3C"> <text x="40" y="55" text-anchor="middle" font-size="11" fill="#1B5E20">Input</text> <text x="40" y="70" text-anchor="middle" font-size="11" fill="#1B5E20">Tokens</text> <text x="40" y="85" text-anchor="middle" font-size="10" fill="#555">[n × d]</text></rect></p>
+<p><path d="M 70 50 L 95 50" stroke="#388E3C" stroke-width="2" marker-end="url(#arrowGreen)"></path></p>
+<p><rect x="100" y="5" width="70" height="90" rx="4" fill="#C8E6C9" stroke="#388E3C"> <text x="135" y="30" text-anchor="middle" font-size="10" fill="#1B5E20" font-weight="bold">Q = X·W_q</text> <text x="135" y="48" text-anchor="middle" font-size="10" fill="#1B5E20" font-weight="bold">K = X·W_k</text> <text x="135" y="66" text-anchor="middle" font-size="10" fill="#1B5E20" font-weight="bold">V = X·W_v</text> <text x="135" y="88" text-anchor="middle" font-size="9" fill="#555">Matrix-Matrix</text></rect></p>
+<p><path d="M 170 50 L 195 50" stroke="#388E3C" stroke-width="2" marker-end="url(#arrowGreen)"></path></p>
+<p><rect x="200" y="10" width="60" height="80" rx="4" fill="#FFE082" stroke="#F57F17"> <text x="230" y="45" text-anchor="middle" font-size="10" fill="#E65100" font-weight="bold">KV</text> <text x="230" y="62" text-anchor="middle" font-size="10" fill="#E65100" font-weight="bold">Cache</text> <text x="230" y="85" text-anchor="middle" font-size="9" fill="#555">Populated</text></rect></p>
+<p><rect x="10" y="110" width="300" height="60" rx="6" fill="#E8F5E9" stroke="#66BB6A" stroke-dasharray="4"> <text x="160" y="132" text-anchor="middle" font-size="11" fill="#2E7D32" font-weight="bold">Parallel across all tokens — saturates CUDA cores</text> <text x="160" y="150" text-anchor="middle" font-size="10" fill="#555">🎯 Bottleneck: TFLOPS (compute limit)</text> <text x="160" y="164" text-anchor="middle" font-size="10" fill="#555">⏱ Latency: ~tens of ms (short prompts)</text></rect></p>
+<defs> <marker id="arrowGreen" markerwidth="8" markerheight="6" refx="8" refy="3" orient="auto"> <path d="M 0 0 L 8 3 L 0 6" fill="#388E3C"> </path></marker> </defs>
+
+</div>
+<div style="flex: 1; border: 1px solid #2196F3; border-radius: 8px; padding: 12px; background: #E3F2FD;">
+<h4 style="text-align: center; color: #1565C0;" class="anchored">
+🐢 Decode Phase (Memory-Bound)
+</h4>
+<svg width="100%" height="180" viewbox="0 0 320 180" xmlns="http://www.w3.org/2000/svg">
+</svg><p><rect x="10" y="10" width="50" height="70" rx="4" fill="#90CAF9" stroke="#1565C0"> <text x="35" y="50" text-anchor="middle" font-size="11" fill="#0D47A1">Token</text> <text x="35" y="66" text-anchor="middle" font-size="10" fill="#555">#m</text></rect></p>
+<p><path d="M 60 45 L 90 45" stroke="#1565C0" stroke-width="2" marker-end="url(#arrowBlue)"></path></p>
+<p><rect x="95" y="5" width="60" height="80" rx="4" fill="#BBDEFB" stroke="#1565C0"> <text x="125" y="30" text-anchor="middle" font-size="10" fill="#0D47A1" font-weight="bold">q = x·W_q</text> <text x="125" y="48" text-anchor="middle" font-size="10" fill="#0D47A1" font-weight="bold">(single)</text> <text x="125" y="78" text-anchor="middle" font-size="9" fill="#555">Matrix-Vector</text></rect></p>
+<p><path d="M 155 45 L 180 45" stroke="#1565C0" stroke-width="2" marker-end="url(#arrowBlue)"></path></p>
+<p><rect x="185" y="10" width="60" height="70" rx="4" fill="#FFE082" stroke="#F57F17"> <text x="215" y="40" text-anchor="middle" font-size="9" fill="#E65100">KV Cache</text> <text x="215" y="56" text-anchor="middle" font-size="9" fill="#E65100">Lookup</text> <text x="215" y="74" text-anchor="middle" font-size="8" fill="#555">O(1) per token</text></rect></p>
+<p><path d="M 245 45 L 270 45" stroke="#1565C0" stroke-width="2" marker-end="url(#arrowBlue)"></path></p>
+<p><rect x="275" y="10" width="40" height="70" rx="4" fill="#C8E6C9" stroke="#388E3C"> <text x="295" y="50" text-anchor="middle" font-size="9" fill="#1B5E20">Logit</text></rect></p>
+<p><rect x="10" y="110" width="300" height="60" rx="6" fill="#E3F2FD" stroke="#42A5F5" stroke-dasharray="4"> <text x="160" y="132" text-anchor="middle" font-size="11" fill="#1565C0" font-weight="bold">Must load ALL weights from HBM → registers</text> <text x="160" y="150" text-anchor="middle" font-size="10" fill="#555">🎯 Bottleneck: Memory Bandwidth (GB/s)</text> <text x="160" y="164" text-anchor="middle" font-size="10" fill="#555">⏱ Latency: ~30-50 ms per token (7B model)</text></rect></p>
+<defs> <marker id="arrowBlue" markerwidth="8" markerheight="6" refx="8" refy="3" orient="auto"> <path d="M 0 0 L 8 3 L 0 6" fill="#1565C0"> </path></marker> </defs>
+
+</div>
+</div>
+<section id="the-prefill-phase-compute-bound" class="level3">
+<h3 class="anchored" data-anchor-id="the-prefill-phase-compute-bound">The Prefill Phase (Compute-Bound)</h3>
+<p>When you send a prompt, the model processes all input tokens across <strong>every transformer layer</strong> to populate the <strong>Key-Value (KV) cache</strong>. To grasp the real scale, modern LLMs are not a single attention block — they are deep stacks:</p>
+<ul>
+<li><strong>Llama-3-8B:</strong> 32 layers, 32 attention heads per layer</li>
+<li><strong>Llama-3-70B:</strong> 80 layers, 64 heads</li>
+<li><strong>Qwen-2.5-72B:</strong> 80 layers, 64 heads</li>
+<li><strong>DeepSeek-V3:</strong> 61 layers, 128 heads (with MoE FFNs)</li>
+</ul>
+<p>Let <strong><span class="math inline">\(L\)</span> = number of stacked transformer layers.</strong> Each layer is a full attention + FFN block; the output of layer <span class="math inline">\(\ell\)</span> feeds layer <span class="math inline">\(\ell{+}1\)</span>, and the KV cache is passed down the whole stack. Typical <span class="math inline">\(L\)</span>: 32 (Llama-3-8B), 80 (Llama-3-70B, Qwen-2.5-72B), 61 (DeepSeek-V3), and <strong><span class="math inline">\(H\)</span> = number of attention heads per layer.</strong> Each head is an independent “view” of the sequence, with its own learned Q/K/V projection of width <span class="math inline">\(d_k = d / H\)</span>. Typical <span class="math inline">\(H\)</span>: 32, 64, 128.</p>
+<p>For an input embedding matrix <span class="math inline">\(X \in \mathbb{R}^{n \times d}\)</span> (where <span class="math inline">\(n\)</span> is the sequence length and <span class="math inline">\(d\)</span> is the model dimension), each layer <span class="math inline">\(\ell \in \{1, \dots, L\}\)</span> and each head <span class="math inline">\(h \in \{1, \dots, H\}\)</span> projects its own queries, keys, and values. The projection weights are split per head, so <span class="math inline">\(W_q^{(\ell,h)}, W_k^{(\ell,h)}, W_v^{(\ell,h)} \in \mathbb{R}^{d \times d_k}\)</span> where <span class="math inline">\(d_k = d / H\)</span>:</p>
+<ul>
+<li><span class="math inline">\(Q^{(\ell,h)} = X \cdot W_q^{(\ell,h)}\)</span> — <strong>Query</strong> for head <span class="math inline">\(h\)</span> at layer <span class="math inline">\(\ell\)</span></li>
+<li><span class="math inline">\(K^{(\ell,h)} = X \cdot W_k^{(\ell,h)}\)</span> — <strong>Key</strong> for head <span class="math inline">\(h\)</span> at layer <span class="math inline">\(\ell\)</span></li>
+<li><span class="math inline">\(V^{(\ell,h)} = X \cdot W_v^{(\ell,h)}\)</span> — <strong>Value</strong> for head <span class="math inline">\(h\)</span> at layer <span class="math inline">\(\ell\)</span></li>
+</ul>
+<p>Per-head attention is then <span class="math inline">\(\text{softmax}\left(\frac{Q^{(\ell,h)} K^{(\ell,h)\mathsf{T}}}{\sqrt{d_k}}\right) V^{(\ell,h)}\)</span>, and the <span class="math inline">\(H\)</span> head outputs are concatenated and projected back to dimension <span class="math inline">\(d\)</span>. The KV cache stores <strong>every <span class="math inline">\(K^{(\ell,h)}\)</span> and <span class="math inline">\(V^{(\ell,h)}\)</span> for all <span class="math inline">\(L \times H\)</span> head-layer pairs</strong> — that is the multi-gigabyte footprint you hear about for long contexts.</p>
+<p>So <span class="math inline">\(L \times H\)</span> counts the <strong>total head–layer slots</strong> in the network — e.g.&nbsp;Llama-3-70B has <span class="math inline">\(80 \times 64 = 5{,}120\)</span> such slots, and a Mixtral-style MoE multiplies that further by the number of experts in the FFN.</p>
+<p><strong><em>An important exercise to make: Pick a standard model, like Llama-3-70B, and do estimate prefill calculations cost through matmuls from attention and FFN.</em></strong></p>
+</section>
+<section id="the-decode-phase-memory-bound" class="level3">
+<h3 class="anchored" data-anchor-id="the-decode-phase-memory-bound">The Decode Phase (Memory-Bound)</h3>
+<p>This is where tokens are generated one by one. To produce <strong>just one word</strong>, the GPU must load the <strong>entire set of model weights</strong> from <strong>High Bandwidth Memory (HBM)</strong> into its <strong>registers</strong>.</p>
+<p><strong>💡 Factory Analogy:</strong> Imagine a factory producing custom parts. Preparing the factory for a new production run is a massive effort: thousands of workers and machines operate simultaneously to process the raw materials and set up the assembly line. This is the <strong>prefill phase</strong>. The entire prompt is processed in parallel across thousands of CUDA cores, so although a lot of work happens, it is spread across many processors. On a <em>per-token</em> basis, prefill is extremely fast (on the order of microseconds per token).</p>
+<p>Once production begins, the process changes completely. Every new part still requires the entire factory to operate, but now it can produce only <strong>one part at a time</strong>. This is the <strong>decode phase</strong>. Each generated token requires loading the <em>entire model</em> from HBM into registers before producing a single output token. The throughput therefore flips: the first token benefits from the parallel work of the entire factory, while every subsequent token runs the whole factory again to manufacture just one small part. Each of these cycles takes tens of milliseconds because the bottleneck is moving the model’s weights through memory, not performing the computation itself. In other words, decoding is slower on a per-token basis because the <strong>memory wall</strong> prevents the same level of parallelism.</p>
+<p><strong>Memory wall</strong> is the recurring performance bottleneck encountered during decoding. Every new token requires streaming the model’s weights from High Bandwidth Memory (HBM) into the GPU’s compute units before the next computation can begin. As a result, each generated token pays the cost of moving massive amounts of data, even though it produces only a single token of output. The GPU has ample computational power, but its throughput is limited by memory bandwidth rather than arithmetic performance. In other words, decoding repeatedly hits the memory wall: the GPU spends more time fetching the model’s weights than computing the next token.</p>
+<p><strong>Mapping the analogy to production metrics:</strong> the factory’s <strong>setup phase</strong> and <strong>production phase</strong> correspond to the two latency metrics that determine user-perceived responsiveness (see <a href="https://www.baseten.co/blog/llm-inference-guide">Baseten’s LLM inference guide</a>):</p>
+<ul>
+<li><strong>TTFT (Time To First Token):</strong> The wall-clock latency of the prefill phase. It is dominated by compute (TFLOPS) and decides how long the user waits before any output appears. Empirically, TTFT is roughly proportional to the number of input tokens × parameter count.</li>
+<li><strong>ITL (Inter-Token Latency) / TPOT (Time Per Output Token):</strong> The wall-clock latency of each decode step. It is dominated by memory bandwidth (the full weights must be re-read from HBM) and decides the perceived “smoothness” of streaming. For a 7B model in FP16 on an RTX 4090 (≈1 TB/s effective bandwidth), a single decode step lands around 30–50 ms.</li>
+</ul>
+<p>Total user-perceived latency for a response with <span class="math inline">\(n\)</span> prompt tokens and <span class="math inline">\(m\)</span> generated tokens is approximately <span class="math inline">\(\text{TTFT} + m \times \text{ITL}\)</span>. This is why prefill optimizations (FlashAttention, chunked prefill) target TTFT, while decode optimizations (speculative decoding, quantization, paged KV) target ITL — the rest of this post is essentially a tour of techniques that move the needle on those two numbers.</p>
+</section>
+</section>
+<section id="the-roofline-model-visualizing-the-ridge-point" class="level2">
+<h2 class="anchored" data-anchor-id="the-roofline-model-visualizing-the-ridge-point">2. The Roofline Model: Visualizing the Ridge Point</h2>
+<p>Engineers use the <strong>Roofline Model</strong> (Williams et al., 2009) to identify these bottlenecks. This graph defines a hardware’s theoretical peak performance based on its <strong>Arithmetic Intensity (AI)</strong> — the ratio of compute operations (FLOPs) to memory bytes accessed.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://docs.nersc.gov/tools/performance/roofline/Roofline-intro.png" class="img-fluid figure-img"></p>
+<figcaption>Roofline Model</figcaption>
+</figure>
+</div>
+<ul>
+<li><strong>The Diagonal Line (Memory Wall):</strong> Represents the limit imposed by memory bandwidth (GB/s).</li>
+<li><strong>The Flat Ceiling (Compute Ceiling):</strong> Represents the peak TFLOPS of the device.</li>
+<li><strong>The Ridge Point (AI ≈ 10):</strong> The intersection where the diagonal meets the ceiling. This is the <strong>efficiency sweet spot</strong>, where the GPU is perfectly saturated — compute and memory access are perfectly balanced.</li>
+</ul>
+<p><strong>The Reality:</strong> Most local LLM decoding lives far to the left of this ridge, in the “memory-bound zone.” The bottleneck is the travel speed from HBM to the cores, leaving the majority of available compute idle.</p>
+</section>
+<section id="industry-standards-flashattention-and-pagedattention" class="level2">
+<h2 class="anchored" data-anchor-id="industry-standards-flashattention-and-pagedattention">3. Industry Standards: FlashAttention and PagedAttention</h2>
+<p>To break through this wall, modern engines use two primary architectural shifts:</p>
+<section id="flashattention-tiling-and-operator-fusion" class="level3">
+<h3 class="anchored" data-anchor-id="flashattention-tiling-and-operator-fusion">FlashAttention: Tiling and Operator Fusion</h3>
+<p>Standard attention materializes a massive <span class="math inline">\(N \times N\)</span> attention matrix in VRAM — an <span class="math inline">\(O(N^2)\)</span> memory footprint — which is slow to read and write. <strong>FlashAttention</strong> (Dao et al., 2022) bypasses this via <strong>tiling and operator fusion</strong>:</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://raw.githubusercontent.com/garg-aayush/garg-aayush.github.io/master/static/img/blog-2026-03-27/flashattention.png" class="img-fluid figure-img"></p>
+<figcaption>FlashAttention</figcaption>
+</figure>
+</div>
+<ul>
+<li><strong>Tiling:</strong> The algorithm breaks the large <span class="math inline">\(Q, K, V\)</span> matrices into smaller blocks (“tiles”) that fit entirely within the GPU’s <strong>SRAM</strong> — the fast on-chip buffer (~20MB on A100). Each tile computes a partial attention output independently.</li>
+<li><strong>Online Softmax &amp; Accumulation:</strong> Instead of writing each tile’s intermediate result to HBM, FlashAttention uses an online softmax that incrementally combines tile outputs. At the end, all partial results are correctly summed to produce the exact full attention output.</li>
+<li><strong>Operator Fusion:</strong> The multiplication, softmax, and subsequent integration happen in a <strong>single kernel launch</strong> without writing intermediate results back to slow HBM.</li>
+</ul>
+</section>
+<section id="pagedattention-memory-paging" class="level3">
+<h3 class="anchored" data-anchor-id="pagedattention-memory-paging">PagedAttention: Memory Paging</h3>
+<p>Introduced by the <strong>vLLM team</strong> (Kwon et al., 2023), this technique solves the problem of KV cache fragmentation. Traditional systems pre-allocate a contiguous block of VRAM for each request large enough to hold the <em>maximum possible</em> sequence length.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="https://www.hopsworks.ai/images/dictionary/661fccb2918b634dc2249d2b_axaxnlg5ptxys-nnu4ydwckv7djafqnamcjafunn6hmuxygtwoil3pqmtzxhpjtonwvewhr8qbqapbxuxt21n5er-asl8e98x1q_4lvamj2y-bczhwqpqga0iugk_qc8mtiydornbzfziqgifdy0l84.png" class="img-fluid figure-img"></p>
+<figcaption>PagedAttention</figcaption>
+</figure>
+</div>
+<ul>
+<li><strong>Internal fragmentation:</strong> If the actual sequence is shorter than the maximum, the over-allocated remainder is completely wasted — up to 50-60% of VRAM in practice.</li>
+<li><strong>External fragmentation:</strong> As requests complete and free their blocks, the VRAM heap becomes fragmented, making it hard to find contiguous space for new large requests.</li>
+<li><strong>PagedAttention</strong> solves this by borrowing the concept of virtual memory: a <strong>Block Table</strong> maps logical page numbers to non-contiguous physical VRAM blocks. Pages are allocated on demand (no over-allocation), and multiple sequences can <strong>share physical pages</strong> for common prefixes via <strong>Prefix Sharing</strong>.</li>
+<li><strong>Where it lives:</strong> PagedAttention sits in the attention mechanism’s KV cache management layer — it replaces the contiguous buffer with a page table lookup during the attention kernel.</li>
+</ul>
+</section>
+</section>
+<section id="scaling-the-reasoning-budget-moe-and-cot" class="level2">
+<h2 class="anchored" data-anchor-id="scaling-the-reasoning-budget-moe-and-cot">4. Scaling the Reasoning Budget: MoE and CoT</h2>
+<p>Modern LLMs’ architectural traits demand even more resources, requiring tailored engines to accommodate their dynamic behavior efficiently:</p>
+<section id="mixture-of-experts-moe" class="level3">
+<h3 class="anchored" data-anchor-id="mixture-of-experts-moe">Mixture of Experts (MoE)</h3>
+<p>Instead of a single monolithic Feed-Forward Network (FFN) per transformer layer, MoE models like Mixtral 8x7B use multiple “expert” FFN sub-networks and a <strong>Router</strong> (or gate) that selects which experts to activate for each token.</p>
+<p><strong>How it works, step by step:</strong> 1. Each token produces a hidden representation <span class="math inline">\(h\)</span> before the FFN layer. 2. The Router computes a probability distribution over <span class="math inline">\(E\)</span> experts: <span class="math inline">\(p = \text{softmax}(h \cdot W_r)\)</span>, where <span class="math inline">\(W_r \in \mathbb{R}^{d \times E}\)</span>. 3. Only the top-<span class="math inline">\(k\)</span> experts (typically <span class="math inline">\(k=2\)</span>) are activated for that token. 4. The token’s output is a weighted sum of the selected experts’ outputs: <span class="math inline">\(y = \sum_{i \in \text{top-k}} p_i \cdot \text{FFN}_i(h)\)</span>.</p>
+</section>
+<section id="chain-of-thought-cot-and-the-thinking-parameter" class="level3">
+<h3 class="anchored" data-anchor-id="chain-of-thought-cot-and-the-thinking-parameter">Chain of Thought (CoT) and the Thinking Parameter</h3>
+<p>Chain of Thought (Wei et al., 2022) prompts the model to produce intermediate reasoning steps before the final answer. This exponentially increases the number of decode tokens (<span class="math inline">\(m\)</span>), making local generation speed the primary factor in whether an agent’s “thought process” takes 2 seconds or 20.</p>
+<p>The <strong>“thinking”</strong> parameter shapes inference by modulating the <strong>stop condition</strong>: rather than stopping at the first answer token, the runtime allows the model to continue generating intermediate “thought” tokens until the budget is exhausted, then produces a final answer. This directly amplifies the memory-bound decode phase, making hardware efficiency even more critical.</p>
+</section>
+</section>
+<section id="modern-llms-demand-specific-traits-from-inference-engines" class="level2">
+<h2 class="anchored" data-anchor-id="modern-llms-demand-specific-traits-from-inference-engines">Modern LLMs demand specific traits from inference engines</h2>
+<p>MoE and CoT/Thinking have transformed the inference surface from a uniform workload into a deeply <strong>heterogeneous</strong> one, and the gap is widening. Two consequences deserve to be made explicit before we get to Hermes-XLR:</p>
+<ul>
+<li><strong>MoE makes memory and compute disagree.</strong> A model like Mixtral 8x7B holds all 8 experts in VRAM (~<span class="math inline">\(96\)</span> GB at FP16) but only computes <span class="math inline">\(\tfrac{k}{E} = \tfrac{1}{4}\)</span> of them per token. The runtime has to schedule <strong>expert parallelism</strong> — place experts across devices — and minimize the <strong>all-to-all</strong> traffic that happens when the router’s top-<span class="math inline">\(k\)</span> selection shifts mid-sequence. The memory and compute budgets live on different curves, and naive batching breaks both.</li>
+<li><strong>CoT/Thinking makes prefill and decode fight for the same GPU.</strong> A “small” request at prefill time can become a memory-bound decode problem for tens of seconds once thinking unlocks. Total wall-clock becomes <span class="math inline">\(\text{TTFT} + m \cdot \text{ITL}\)</span> with <span class="math inline">\(m\)</span> now routinely in the <strong>thousands</strong>. A runtime that treats prefill and decode as two serial phases will starve one of them.</li>
+</ul>
+<p>On top of MoE and CoT, the modern inference stack layers even more moving parts, each one improving one metric (latency, throughput, memory) while making the kernel-selection problem <span class="math inline">\(n\)</span>-dimensional:</p>
+<ul>
+<li><strong>Continuous batching</strong> (<a href="https://www.usenix.org/conference/osdi22/presentation/yu">Orca, Yu et al., 2022</a>) — fit new requests into slots vacated by finished ones, instead of waiting for the whole batch.</li>
+<li><strong>Weight quantization</strong> — INT4/INT8/FP8 with methods like <a href="https://arxiv.org/abs/2306.00978">AWQ</a> (activation-aware) and <a href="https://arxiv.org/abs/2211.10438">SmoothQuant</a> (migrate activation difficulty to weights).</li>
+<li><strong>KV-cache quantization</strong> — SqueezeBits, KV8 / KIVI, INT4 keys, FP8 values.</li>
+<li><strong>Speculative decoding alternatives</strong> — <a href="https://arxiv.org/abs/2401.10774">Medusa</a> (parallel decoding heads) and <a href="https://arxiv.org/abs/2401.15077">EAGLE</a> (feature-level draft) instead of a separate draft model.</li>
+<li><strong>Multi-LoRA serving</strong> — <a href="https://arxiv.org/abs/2312.13582">S-LoRA</a> keeps thousands of adapters hot in VRAM with page-level swapping.</li>
+<li><strong>Heterogeneous offload</strong> — <a href="https://arxiv.org/abs/2303.06865">FlexGen</a> pipelines GPU/CPU/NVMe tiers when the model does not fit.</li>
+<li><strong>Chunked prefill</strong> — interleave prompt tokens with decode steps to keep the GPU saturated instead of monopolizing it for hundreds of ms on long prompts.</li>
+</ul>
+<p>Each of these is a powerful lever in isolation. The catch is that they are <strong>not orthogonal</strong>: enabling FP8 KV cache often forces you to abandon FlashAttention-2; turning on chunked prefill breaks certain continuous-batching implementations; quantizing a MoE’s router weights behaves differently from quantizing expert FFNs. The combinatorics explode.</p>
+<p>That is exactly the problem the next section attacks. <strong>Hermes-XLR</strong> does not try to pick one technique — it picks a <em>combination</em> that fits the local hardware, the model, and the workload shape, and it does so automatically. This is the catharsis: one Capability Mapper, one Execution Plan, and the mess above disappears behind a stable, measurable interface.</p>
+</section>
+<section id="introducing-hermes-xlr-the-local-maximalist" class="level2">
+<h2 class="anchored" data-anchor-id="introducing-hermes-xlr-the-local-maximalist">5. Introducing Hermes-XLR: The Local Maximalist</h2>
+<p><strong>Hermes-XLR</strong> is an optimization-first runtime built specifically for the <code>hermes-agent</code> framework and NVIDIA hardware. It uses a <strong>Capability Mapper</strong> to assess your hardware and emit a custom <strong>Execution Plan</strong> to saturate your specific VRAM and compute units.</p>
+<section id="lever-1-tiered-prefix-exploitation" class="level3">
+<h3 class="anchored" data-anchor-id="lever-1-tiered-prefix-exploitation">Lever 1: Tiered Prefix Exploitation</h3>
+<p>Hermes Agent organizes prompts into three logical tiers: <strong>Stable</strong> (System), <strong>Context</strong> (History), and <strong>Volatile</strong> (Input). Because the Stable tier never changes, Hermes-XLR ensures a <strong>100% cache hit rate</strong>, skipping the prefill phase entirely for every subsequent turn.</p>
+</section>
+<section id="lever-2-smc-speculative-decoding" class="level3">
+<h3 class="anchored" data-anchor-id="lever-2-smc-speculative-decoding">Lever 2: SMC-Speculative Decoding</h3>
+<p>Standard <strong>Speculative Decoding (SD)</strong> (<a href="https://arxiv.org/abs/2211.17192">Leviathan et al., 2022</a>; <a href="https://arxiv.org/abs/2302.01318">Chen et al., 2023</a>) uses a small “draft” model to propose <span class="math inline">\(\gamma\)</span> tokens in a single forward pass, then the target model <strong>verifies all <span class="math inline">\(\gamma\)</span> in parallel</strong> in one forward pass. The accepted prefix is committed; the first rejected token becomes the next decode position, and the rest of the draft is discarded. The expected accepted length is <span class="math inline">\(\frac{1 - \alpha^{\gamma+1}}{1 - \alpha}\)</span> where <span class="math inline">\(\alpha\)</span> is the per-token acceptance probability.</p>
+<p><strong>Why vanilla SD collapses on reasoning workloads.</strong> When draft and target distributions agree (<span class="math inline">\(\alpha \to 1\)</span>), this is a near-perfect speedup: <span class="math inline">\(\gamma\)</span> tokens at the cost of one target forward. But CoT and code generation create <strong>long-horizon</strong> regions where draft and target <em>diverge</em>: the draft confidently proposes a plausible-but-wrong token, the target rejects, and the entire <span class="math inline">\(\gamma\)</span>-length draft is thrown away. You paid draft cost <span class="math inline">\(\gamma \times\)</span> and recovered ~1 token. Empirically, <span class="math inline">\(\alpha\)</span> can drop to ~0.3 on hard reasoning prompts, and the realized speedup falls below 1× — i.e.&nbsp;<strong>slower than no draft at all</strong>.</p>
+<p><strong>🧠 Particle-filter intuition:</strong> instead of betting on one sequence and rolling back, keep a <em>population</em> of <span class="math inline">\(N\)</span> candidate continuations (“particles”). The draft model proposes one next token per particle (cost: <span class="math inline">\(N\)</span> small forwards), the target scores all <span class="math inline">\(N\)</span> in one batched forward, and we assign each particle a weight <span class="math inline">\(w^{(i)} = P_{\text{target}} / P_{\text{draft}}\)</span>. Low-weight particles are pruned; high-weight ones are replicated — survival of the fittest, exactly as in classical Monte Carlo filtering. The resampled population is an <strong>unbiased</strong> estimator of the target distribution, and because every particle already saw a target forward, the throughput is bounded from below even when <span class="math inline">\(\alpha\)</span> is low.</p>
+<p>Hermes-XLR implements <strong>Sequential Monte Carlo Speculative Decoding (SMC-SD)</strong> — a particle-filter approach that turns brittle single-shot speculation into a <strong>variance-controlled Monte Carlo estimator</strong>, which is a much better fit for the high-variance draft/target gap that reasoning models exhibit.</p>
+<ol type="1">
+<li><strong>Initialization:</strong> Maintain <span class="math inline">\(N\)</span> particles (candidate sequences), all starting at the current context.</li>
+<li><strong>Proposal:</strong> For each particle, the draft model proposes the next token <span class="math inline">\(x_{t+1}^{(i)}\)</span>.</li>
+<li><strong>Reweighting:</strong> Compute an importance weight for each particle: <span class="math display">\[w^{(i)} = \frac{P_{\text{target}}(x_{t+1}^{(i)} \mid \text{context})}{P_{\text{draft}}(x_{t+1}^{(i)} \mid \text{context})}\]</span> This weight measures how “surprised” the target model is by the draft’s proposal.</li>
+<li><strong>Resampling:</strong> Draw <span class="math inline">\(N\)</span> new particles with replacement, where the probability of selecting particle <span class="math inline">\(i\)</span> is proportional to <span class="math inline">\(w^{(i)}\)</span>. Particles with low weight (draft was wrong) are pruned; particles with high weight are replicated.</li>
+<li><strong>Result:</strong> The resampled particles form an unbiased approximation of the target model’s distribution. Effective throughput increases because idle compute is used to evaluate multiple candidate paths in parallel.</li>
+</ol>
+<p><strong>But particles are not free.</strong> Keeping <span class="math inline">\(N\)</span> particles changes the effective batch size of the verification pass from <span class="math inline">\(1\)</span> to <span class="math inline">\(N\)</span>. That moves the kernel rightward on the roofline toward higher arithmetic intensity — but at a hardware cost:</p>
+<ul>
+<li><strong>KV cache scales linearly with <span class="math inline">\(N\)</span>.</strong> Each particle carries its own context. For a 32K-token sequence on Llama-3-8B, the KV cache for a single sequence is already ~2 GB; with <span class="math inline">\(N{=}4\)</span> particles, that grows to ~8 GB — on top of the model weights (~16 GB at FP16). On a consumer card like an RTX 4090 (24 GB VRAM), the budget disappears fast.</li>
+<li><strong>Activation memory rises with <span class="math inline">\(N\)</span>.</strong> The target batched forward pass must hold <span class="math inline">\(N\)</span> copies of intermediate activations. Residual streams, attention scores, and hidden states all multiply by <span class="math inline">\(N\)</span> during the verification step.</li>
+<li><strong>The draft/target FLOP ratio shifts.</strong> For small <span class="math inline">\(N\)</span> (e.g.&nbsp;<span class="math inline">\(N{=}2\)</span>), the draft cost dominates; for large <span class="math inline">\(N\)</span> (e.g.&nbsp;<span class="math inline">\(N{=}16\)</span>), the target verification pass dwarfs everything. There is a sweet spot where the marginal particle adds more accepted tokens than its KV and activation cost.</li>
+</ul>
+<p><strong>Hermes-XLR’s Capability Mapper handles this trade-off explicitly.</strong> Before enabling SMC-SD, it queries PagedAttention’s block table for the current context length and the free page count. <span class="math inline">\(N\)</span> is set dynamically: when headroom is tight, <span class="math inline">\(N\)</span> drops to 1 (degenerating to vanilla SD); when headroom is abundant, <span class="math inline">\(N\)</span> climbs to exhaust the compute ceiling. The particle count becomes a dial that the Mapper turns based on remaining VRAM, not a hardcoded hyperparameter.</p>
+</section>
+<section id="lever-3-latency-hiding" class="level3">
+<h3 class="anchored" data-anchor-id="lever-3-latency-hiding">Lever 3: Latency Hiding</h3>
+<p>Recent updates introduce <strong>async persistence</strong> and <strong>safe read-only prefetch caching</strong>. These overlap non-inference tasks — like saving logs or updating agent history — with the GPU’s decode cycles, effectively “zeroing out” orchestration overhead from the critical path.</p>
+</section>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<section id="papers" class="level3">
+<h3 class="anchored" data-anchor-id="papers">Papers</h3>
+<p>[1] Williams, S., Waterman, A., &amp; Patterson, D. (2009). Roofline: An Insightful Visual Performance Model for Multicore Architectures. <em>Communications of the ACM</em>, 52(4). https://cacm.acm.org/research/roofline-an-insightful-visual-performance-model-for-multicore-architectures/</p>
+<p>[2] Dao, T., Fu, D. Y., Ermon, S., Rudra, A., &amp; Ré, C. (2022). FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness. <em>NeurIPS 2022</em>. https://arxiv.org/abs/2205.14135</p>
+<p>[3] Kwon, W., Li, Z., Zhuang, S., Sheng, Y., Zheng, L., Yu, C. H., Gonzalez, J. E., Zhang, H., &amp; Stoica, I. (2023). Efficient Memory Management for LLM Serving with PagedAttention. <em>SOSP 2023</em>. https://arxiv.org/abs/2309.06180</p>
+<p>[4] Jiang, A. Q., et al.&nbsp;(2024). Mixtral of Experts. <em>arXiv:2401.04088</em>. https://arxiv.org/abs/2401.04088</p>
+<p>[5] Shazeer, N., et al.&nbsp;(2017). Outrageously Large Neural Networks: The Sparsely-Gated Mixture-of-Experts Layer. <em>arXiv:1701.06538</em>. https://arxiv.org/abs/1701.06538</p>
+<p>[6] Wei, J., et al.&nbsp;(2022). Chain-of-Thought Prompting Elicits Reasoning in Large Language Models. <em>NeurIPS 2022</em>. https://arxiv.org/abs/2201.11903</p>
+<p>[7] Emara, Y., Seidel, K., Wang, H.-S., Wang, T.-H., Smolensky, P., Song, X., Pérez, E., &amp; Kang, J. (2024). Faster LLM Inference via Sequential Monte Carlo. <em>arXiv:2405.04437</em>. https://arxiv.org/abs/2405.04437</p>
+<p>[8] Leviathan, Y., Kalman, M., &amp; Matias, Y. (2022). Fast Inference from Transformers via Speculative Decoding. <em>arXiv:2211.17192</em>. https://arxiv.org/abs/2211.17192</p>
+<p>[9] Chen, C., et al.&nbsp;(2023). Accelerating Large Language Model Decoding with Speculative Sampling. <em>arXiv:2302.01318</em>. https://arxiv.org/abs/2302.01318</p>
+<p>[10] Yu, G.-I., et al.&nbsp;(2022). Orca: A Distributed Serving System for Transformer-Based Generative Models. <em>OSDI 2022</em>. https://www.usenix.org/conference/osdi22/presentation/yu</p>
+<p>[11] Lin, J., et al.&nbsp;(2023). AWQ: Activation-aware Weight Quantization for LLM Compression and Acceleration. <em>arXiv:2306.00978</em>. https://arxiv.org/abs/2306.00978</p>
+<p>[12] Xiao, G., et al.&nbsp;(2022). SmoothQuant: Accurate and Efficient Post-Training Quantization for Large Language Models. <em>arXiv:2211.10438</em>. https://arxiv.org/abs/2211.10438</p>
+<p>[13] Sheng, Y., et al.&nbsp;(2023). S-LoRA: Serving Thousands of Concurrent LoRA Adapters. <em>arXiv:2312.13582</em>. https://arxiv.org/abs/2312.13582</p>
+<p>[14] Sheng, Y., et al.&nbsp;(2023). FlexGen: High-Throughput Generative Inference of Large Language Models with a Single GPU. <em>ICML 2023</em>. https://arxiv.org/abs/2303.06865</p>
+<p>[15] Cai, T., et al.&nbsp;(2024). Medusa: Simple LLM Inference Acceleration Framework with Multiple Decoding Heads. <em>arXiv:2401.10774</em>. https://arxiv.org/abs/2401.10774</p>
+<p>[16] Li, Y., et al.&nbsp;(2024). EAGLE: Speculative Sampling Requires Rethinking Feature Uncertainty. <em>arXiv:2401.15077</em>. https://arxiv.org/abs/2401.15077</p>
+<p>[17] Guo, D., et al.&nbsp;(2025). DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning. <em>arXiv:2501.12948</em>. https://arxiv.org/abs/2501.12948</p>
+</section>
+<section id="figures" class="level3">
+<h3 class="anchored" data-anchor-id="figures">Figures</h3>
+<p><strong>Figure 1.</strong> Prefill Phase (Compute-Bound) &amp; Decode Phase (Memory-Bound) architecture diagrams. Inline SVG diagrams showing tensor flows for each phase.</p>
+<p><strong>Figure 2.</strong> Roofline Model — Attainable Performance vs.&nbsp;Arithmetic Intensity. Canonical roofline diagram showing memory wall (diagonal), compute ceiling (flat), and ridge point. Source: Williams et al.&nbsp;(2009), NERSC documentation. https://docs.nersc.gov/tools/performance/roofline/Roofline-intro.png</p>
+<p><strong>Figure 3.</strong> FlashAttention: Tiling &amp; Operator Fusion of QK<sup>T</sup>, Softmax, and PV. Schematic comparing standard attention (materializes N×N matrix in HBM) vs FlashAttention (streams Q/K/V tiles through SRAM, fuses softmax with matmul). Source: Dao et al.&nbsp;(2022), Tri Dao’s blog. https://tridao.me/blog/2022/09/flashattention.html</p>
+<p><strong>Figure 4.</strong> PagedAttention: Block Table Maps Logical KV Pages to Non-Contiguous VRAM. Original schematic showing logical KV buffer with block table redirecting to physical VRAM blocks, enabling prefix sharing. Source: Kwon et al.&nbsp;(2023), vLLM announcement. https://blog.vllm.ai/2023/06/20/vllm.html</p>
+<p><strong>Figure 5.</strong> Sparse Mixture-of-Experts — Router Activates Top-k of E FFNs per Token. Mixtral schematic: token hidden state scored by router against E expert FFNs; top-k computed and weighted-summed. Source: Jiang et al.&nbsp;(2024). https://arxiv.org/abs/2401.04088</p>
+<p><strong>Figure 6.</strong> The “Thinking” / Reasoning Budget Parameter in Modern CoT Models. Configurable thinking modes in QwQ-32B, DeepSeek-R1 implicit budget, and Chain-of-Thought origins. Sources: Qwen blog (2024), Guo et al.&nbsp;(2025), Wei et al.&nbsp;(2022).</p>
+<p><strong>Figure 7.</strong> SMC Speculative Decoding: Particle-Filter Loop (Proposal → Reweight → Resample). Emara et al.’s SMC-SD schematic: N particles proposed by draft, reweighted by w = P_target/P_draft, resampled for unbiased target approximation. Source: Emara et al.&nbsp;(2024). https://arxiv.org/abs/2405.04437</p>
+</section>
+<section id="additional-resources" class="level3">
+<h3 class="anchored" data-anchor-id="additional-resources">Additional Resources</h3>
+<ul>
+<li>Baseten. <em>A Guide to LLM Inference and Performance</em>. https://www.baseten.co/blog/llm-inference-guide</li>
+<li>Nous Research. <em>Architecture | Hermes Agent</em>. https://github.com/NousResearch/hermes-agent</li>
+<li>vLLM Team. <em>Automatic Prefix Caching Documentation</em>. https://docs.vllm.ai/en/latest/features/prefix_caching.html</li>
+<li>NVIDIA Corporation. <em>A100 and Hopper Architecture Datasheets</em>. https://www.nvidia.com/en-us/data-center/a100/</li>
+<li>SqueezeBits. <em>vLLM vs TensorRT-LLM: KV Cache Quantization</em>. https://squeezebits.com/blog/vllm-vs-tensorrt-llm-kv-cache-quantization</li>
+<li>Nous Research. <em>Hermes Skills System and /learn Command</em>. https://github.com/NousResearch/hermes-agent/tree/main/skills</li>
+<li>jeancmaia. <em>hermes-xlr GitHub Repository</em>. https://github.com/jeancmaia/hermes-xlr</li>
+</ul>
+
+
+</section>
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
