@@ -197,31 +197,13 @@ window.Quarto = {
 <h4 style="text-align: center; color: #2E7D32;" class="anchored">
 ⚡ Prefill Phase (Compute-Bound)
 </h4>
-<svg width="100%" height="180" viewbox="0 0 320 180" xmlns="http://www.w3.org/2000/svg">
-</svg><p><rect x="10" y="10" width="60" height="80" rx="4" fill="#A5D6A7" stroke="#388E3C"> <text x="40" y="55" text-anchor="middle" font-size="11" fill="#1B5E20">Input</text> <text x="40" y="70" text-anchor="middle" font-size="11" fill="#1B5E20">Tokens</text> <text x="40" y="85" text-anchor="middle" font-size="10" fill="#555">[n × d]</text></rect></p>
-<p><path d="M 70 50 L 95 50" stroke="#388E3C" stroke-width="2" marker-end="url(#arrowGreen)"></path></p>
-<p><rect x="100" y="5" width="70" height="90" rx="4" fill="#C8E6C9" stroke="#388E3C"> <text x="135" y="30" text-anchor="middle" font-size="10" fill="#1B5E20" font-weight="bold">Q = X·W_q</text> <text x="135" y="48" text-anchor="middle" font-size="10" fill="#1B5E20" font-weight="bold">K = X·W_k</text> <text x="135" y="66" text-anchor="middle" font-size="10" fill="#1B5E20" font-weight="bold">V = X·W_v</text> <text x="135" y="88" text-anchor="middle" font-size="9" fill="#555">Matrix-Matrix</text></rect></p>
-<p><path d="M 170 50 L 195 50" stroke="#388E3C" stroke-width="2" marker-end="url(#arrowGreen)"></path></p>
-<p><rect x="200" y="10" width="60" height="80" rx="4" fill="#FFE082" stroke="#F57F17"> <text x="230" y="45" text-anchor="middle" font-size="10" fill="#E65100" font-weight="bold">KV</text> <text x="230" y="62" text-anchor="middle" font-size="10" fill="#E65100" font-weight="bold">Cache</text> <text x="230" y="85" text-anchor="middle" font-size="9" fill="#555">Populated</text></rect></p>
-<p><rect x="10" y="110" width="300" height="60" rx="6" fill="#E8F5E9" stroke="#66BB6A" stroke-dasharray="4"> <text x="160" y="132" text-anchor="middle" font-size="11" fill="#2E7D32" font-weight="bold">Parallel across all tokens — saturates CUDA cores</text> <text x="160" y="150" text-anchor="middle" font-size="10" fill="#555">🎯 Bottleneck: TFLOPS (compute limit)</text> <text x="160" y="164" text-anchor="middle" font-size="10" fill="#555">⏱ Latency: ~tens of ms (short prompts)</text></rect></p>
-<defs> <marker id="arrowGreen" markerwidth="8" markerheight="6" refx="8" refy="3" orient="auto"> <path d="M 0 0 L 8 3 L 0 6" fill="#388E3C"> </path></marker> </defs>
-
+<p><img src="diagrams/prefill-phase.svg" alt="Prefill Phase" style="width: 100%; height: 180px;"></p>
 </div>
 <div style="flex: 1; border: 1px solid #2196F3; border-radius: 8px; padding: 12px; background: #E3F2FD;">
 <h4 style="text-align: center; color: #1565C0;" class="anchored">
 🐢 Decode Phase (Memory-Bound)
 </h4>
-<svg width="100%" height="180" viewbox="0 0 320 180" xmlns="http://www.w3.org/2000/svg">
-</svg><p><rect x="10" y="10" width="50" height="70" rx="4" fill="#90CAF9" stroke="#1565C0"> <text x="35" y="50" text-anchor="middle" font-size="11" fill="#0D47A1">Token</text> <text x="35" y="66" text-anchor="middle" font-size="10" fill="#555">#m</text></rect></p>
-<p><path d="M 60 45 L 90 45" stroke="#1565C0" stroke-width="2" marker-end="url(#arrowBlue)"></path></p>
-<p><rect x="95" y="5" width="60" height="80" rx="4" fill="#BBDEFB" stroke="#1565C0"> <text x="125" y="30" text-anchor="middle" font-size="10" fill="#0D47A1" font-weight="bold">q = x·W_q</text> <text x="125" y="48" text-anchor="middle" font-size="10" fill="#0D47A1" font-weight="bold">(single)</text> <text x="125" y="78" text-anchor="middle" font-size="9" fill="#555">Matrix-Vector</text></rect></p>
-<p><path d="M 155 45 L 180 45" stroke="#1565C0" stroke-width="2" marker-end="url(#arrowBlue)"></path></p>
-<p><rect x="185" y="10" width="60" height="70" rx="4" fill="#FFE082" stroke="#F57F17"> <text x="215" y="40" text-anchor="middle" font-size="9" fill="#E65100">KV Cache</text> <text x="215" y="56" text-anchor="middle" font-size="9" fill="#E65100">Lookup</text> <text x="215" y="74" text-anchor="middle" font-size="8" fill="#555">O(1) per token</text></rect></p>
-<p><path d="M 245 45 L 270 45" stroke="#1565C0" stroke-width="2" marker-end="url(#arrowBlue)"></path></p>
-<p><rect x="275" y="10" width="40" height="70" rx="4" fill="#C8E6C9" stroke="#388E3C"> <text x="295" y="50" text-anchor="middle" font-size="9" fill="#1B5E20">Logit</text></rect></p>
-<p><rect x="10" y="110" width="300" height="60" rx="6" fill="#E3F2FD" stroke="#42A5F5" stroke-dasharray="4"> <text x="160" y="132" text-anchor="middle" font-size="11" fill="#1565C0" font-weight="bold">Must load ALL weights from HBM → registers</text> <text x="160" y="150" text-anchor="middle" font-size="10" fill="#555">🎯 Bottleneck: Memory Bandwidth (GB/s)</text> <text x="160" y="164" text-anchor="middle" font-size="10" fill="#555">⏱ Latency: ~30-50 ms per token (7B model)</text></rect></p>
-<defs> <marker id="arrowBlue" markerwidth="8" markerheight="6" refx="8" refy="3" orient="auto"> <path d="M 0 0 L 8 3 L 0 6" fill="#1565C0"> </path></marker> </defs>
-
+<p><img src="diagrams/decode-phase.svg" alt="Decode Phase" style="width: 100%; height: 180px;"></p>
 </div>
 </div>
 <section id="the-prefill-phase-compute-bound" class="level3">
@@ -240,9 +222,9 @@ window.Quarto = {
 <li><span class="math inline">\(K^{(\ell,h)} = X \cdot W_k^{(\ell,h)}\)</span> — <strong>Key</strong> for head <span class="math inline">\(h\)</span> at layer <span class="math inline">\(\ell\)</span></li>
 <li><span class="math inline">\(V^{(\ell,h)} = X \cdot W_v^{(\ell,h)}\)</span> — <strong>Value</strong> for head <span class="math inline">\(h\)</span> at layer <span class="math inline">\(\ell\)</span></li>
 </ul>
-<p>Per-head attention is then <span class="math inline">\(\text{softmax}\left(\frac{Q^{(\ell,h)} K^{(\ell,h)\mathsf{T}}}{\sqrt{d_k}}\right) V^{(\ell,h)}\)</span>, and the <span class="math inline">\(H\)</span> head outputs are concatenated and projected back to dimension <span class="math inline">\(d\)</span>. The KV cache stores <strong>every <span class="math inline">\(K^{(\ell,h)}\)</span> and <span class="math inline">\(V^{(\ell,h)}\)</span> for all <span class="math inline">\(L \times H\)</span> head-layer pairs</strong> — that is the multi-gigabyte footprint you hear about for long contexts.</p>
+<p>Per-head attention is then <span class="math inline">\(\text{softmax}\left(\frac{Q^{(\ell,h)} K^{(\ell,h)\mathsf{T}}}{\sqrt{d_k}}\right) V^{(\ell,h)}\)</span>, and the <span class="math inline">\(H\)</span> head outputs are concatenated and projected back to dimension <span class="math inline">\(d\)</span>. The KV cache stores <strong>every <span class="math inline">\(K^{(\ell,h)}\)</span> and <span class="math inline">\(V^{(\ell,h)}\)</span> for all <span class="math inline">\(L \times H\)</span> head-layer pairs</strong>.</p>
 <p>So <span class="math inline">\(L \times H\)</span> counts the <strong>total head–layer slots</strong> in the network — e.g.&nbsp;Llama-3-70B has <span class="math inline">\(80 \times 64 = 5{,}120\)</span> such slots, and a Mixtral-style MoE multiplies that further by the number of experts in the FFN.</p>
-<p><strong><em>An important exercise to make: Pick a standard model, like Llama-3-70B, and do estimate prefill calculations cost through matmuls from attention and FFN.</em></strong></p>
+<p><strong><em>An important exercise is to estimate the prefill computation cost of a standard model (e.g., Llama-3-70B) by analyzing the matrix multiplications performed in the attention and feed-forward (FFN) layers.</em></strong></p>
 </section>
 <section id="the-decode-phase-memory-bound" class="level3">
 <h3 class="anchored" data-anchor-id="the-decode-phase-memory-bound">The Decode Phase (Memory-Bound)</h3>
@@ -253,7 +235,7 @@ window.Quarto = {
 <p><strong>Mapping the analogy to production metrics:</strong> the factory’s <strong>setup phase</strong> and <strong>production phase</strong> correspond to the two latency metrics that determine user-perceived responsiveness (see <a href="https://www.baseten.co/blog/llm-inference-guide">Baseten’s LLM inference guide</a>):</p>
 <ul>
 <li><strong>TTFT (Time To First Token):</strong> The wall-clock latency of the prefill phase. It is dominated by compute (TFLOPS) and decides how long the user waits before any output appears. Empirically, TTFT is roughly proportional to the number of input tokens × parameter count.</li>
-<li><strong>ITL (Inter-Token Latency) / TPOT (Time Per Output Token):</strong> The wall-clock latency of each decode step. It is dominated by memory bandwidth (the full weights must be re-read from HBM) and decides the perceived “smoothness” of streaming. For a 7B model in FP16 on an RTX 4090 (≈1 TB/s effective bandwidth), a single decode step lands around 30–50 ms.</li>
+<li><strong>ITL (Inter-Token Latency) / TPOT (Time Per Output Token):</strong> The wall-clock latency of each decode step. It is dominated by memory bandwidth (the full weights must be re-read from HBM) and decides the perceived “smoothness” of streaming.</li>
 </ul>
 <p>Total user-perceived latency for a response with <span class="math inline">\(n\)</span> prompt tokens and <span class="math inline">\(m\)</span> generated tokens is approximately <span class="math inline">\(\text{TTFT} + m \times \text{ITL}\)</span>. This is why prefill optimizations (FlashAttention, chunked prefill) target TTFT, while decode optimizations (speculative decoding, quantization, paged KV) target ITL — the rest of this post is essentially a tour of techniques that move the needle on those two numbers.</p>
 </section>
