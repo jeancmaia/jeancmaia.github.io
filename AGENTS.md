@@ -159,7 +159,7 @@ instead of re-running code. Consequences:
 
 Reusable agent instructions live under **`.opencode/skills/<skill-id>/SKILL.md`**
 (plus optional `reference/`, `scripts/`). OpenCode discovers them automatically;
-`.claude/skills/` and `.agents/skills/` are also recognized for compatibility.
+`.agents/skills/` is also recognized for compatibility.
 Current skills:
 
 - **`faoot-voice`** — write/edit prose in the author's voice. Its canonical corpus
