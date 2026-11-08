@@ -196,8 +196,8 @@ changes over direct commits to `main`.
   not reintroduce poetry config.
 - **Notebooks carry both source and outputs** in the same `.ipynb`. When editing
   prose cells, avoid clobbering stored outputs unnecessarily.
-- **`.gitignore` ignores `**/CLAUDE.md` and `**/manifest.md`** — this file
-  (`AGENTS.md`) is intentionally tool-agnostic and *is* meant to be committed.
+- **`.gitignore` ignores `**/manifest.md`** — this file (`AGENTS.md`) is
+  intentionally tool-agnostic and *is* meant to be committed.
 - Rendering requires the `quarto` CLI on `PATH`; `uv run` provides Python deps
   but not Quarto itself.
 - Empty-looking files (`styles.css`) are real placeholders, not missing content.
