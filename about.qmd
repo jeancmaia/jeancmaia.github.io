@@ -6,7 +6,7 @@ about:
   links:
     - icon: linkedin
       text: LinkedIn
-      href: https://linkedin.com
+      href: https://www.linkedin.com/in/jean-faoot-maia
     - icon: github
       text: Github
       href: https://github.com/jeancmaia

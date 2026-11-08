@@ -74,7 +74,7 @@
     "href": "index.html",
     "title": "Faoot's Lab",
     "section": "",
-    "text": "MCGLM, a unified model for statistical analysis.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nBreaking the Decode Wall: Maximizing Local NVIDIA GPUs with Hermes-XLR\n\n\n\nllm\n\ninference\n\nmachine-learning\n\nnvidia\n\noptimization\n\n\n\nPrefill, decode, and the memory wall — an optimization-first runtime for local LLM inference on consumer NVIDIA GPUs.\n\n\n\n\n\nJul 2, 2026\n\n\n\n\n\n\n\n\n\n\n\n\nPrice, Curves, and Agents\n\n\n\nmicroeconomics\n\npricing\n\nbayesian\n\ndata-science\n\n\n\nDemand curves, elasticity, causal inference, and agentic pricing loops: the microeconomic foundations behind modern pricing systems.\n\n\n\n\n\nApr 3, 2026\n\n\n\n\n\nNo matching items"
+    "text": "Breaking the Decode Wall: Maximizing Local NVIDIA GPUs with Hermes-XLR\n\n\n\nllm\n\ninference\n\nmachine-learning\n\nnvidia\n\noptimization\n\n\n\nPrefill, decode, and the memory wall — an optimization-first runtime for local LLM inference on consumer NVIDIA GPUs.\n\n\n\n\n\nJul 2, 2026\n\n\n\n\n\n\n\n\n\n\n\n\nPrice, Curves, and Agents\n\n\n\nmicroeconomics\n\npricing\n\nbayesian\n\ndata-science\n\n\n\nDemand curves, elasticity, causal inference, and agentic pricing loops: the microeconomic foundations behind modern pricing systems.\n\n\n\n\n\nApr 3, 2026\n\n\n\n\n\n\n\n\n\n\n\n\nMCGLM, a unified model for statistical analysis.\n\n\n\nstatistics\n\nmcglm\n\npython\n\n\n\nAn introduction to the Multivariate Covariance Generalized Linear Model (MCGLM) and its Python library for fitting multivariate and non-independent responses.\n\n\n\n\n\nFeb 6, 2023\n\n\n\n\n\nNo matching items"
   },
   {
     "objectID": "posts/price-curves-agents/price_curves_agents.html",
