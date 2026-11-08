@@ -1,6 +1,9 @@
 /.quarto/
 /_site/
 
+# Local-only thesis workshop — never committed or published
+_theses/
+
 **/*.quarto_ipynb
 
 **/manifest.md

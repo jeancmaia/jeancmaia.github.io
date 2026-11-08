@@ -167,6 +167,19 @@ Current skills:
   `.opencode/skills/faoot-voice/reference/voice-samples.md`. Load it before
   drafting or substantially editing any post.
 
+## Local thesis workshop
+
+Private drafting area for new articles lives at **`_theses/`** (git-ignored — never
+committed or pushed). Operate it with the `thesis-workshop` skill, whose protocol
+is canonical. The working artifact is a notebook (`draft.ipynb`) with normalized
+version snapshots (`versions/vNNN.*`) and an append-only interaction journal.
+
+- **Privacy:** `_theses/` stays untracked. Quarto skips `_`-prefixed paths, so
+  drafts never render into `docs/` — keep the leading underscore, and confirm
+  `git status` stays clean after any site render.
+- **Promotion:** only once a thesis reaches `ready`, copy it into `posts/<slug>/`
+  (see the skill and the publishing flow below).
+
 ## Publishing / deployment
 
 There is **no CI workflow** (no `.github/` directory). Publishing is manual:
