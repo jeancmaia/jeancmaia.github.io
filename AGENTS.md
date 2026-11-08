@@ -174,6 +174,8 @@ committed or pushed). Operate it with the `thesis-workshop` skill, whose protoco
 is canonical. The working artifact is a notebook (`draft.ipynb`) with normalized
 version snapshots (`versions/vNNN.*`) and an append-only interaction journal.
 
+- **Voice:** every draft — and the eventual post — is written with the
+  `faoot-voice` skill. It is required throughout, not a final pass.
 - **Privacy:** `_theses/` stays untracked. Quarto skips `_`-prefixed paths, so
   drafts never render into `docs/` — keep the leading underscore, and confirm
   `git status` stays clean after any site render.

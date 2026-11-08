@@ -9,7 +9,9 @@ A private, **local-only** drafting loop for new articles. Every artifact lives i
 `_theses/`, which is git-ignored and never published. The notebook is the working
 artifact; versions and an interaction ledger provide the history.
 
-Use the [`faoot-voice`](../faoot-voice/SKILL.md) skill on prose and at promotion.
+**All prose is written in the [`faoot-voice`](../faoot-voice/SKILL.md) voice.** It is
+mandatory for every draft, every iteration, every version snapshot, and the final
+post — not a finishing pass. Load it before writing or editing any prose.
 
 ## Layout
 
@@ -54,7 +56,8 @@ For every change request, do all six steps:
 1. **Load** — read `brief.md`, `draft.ipynb`, and the tail of `journal.md`.
 2. **Restate** — write the interpretation and any assumptions *before* editing, so
    the author can catch a misread.
-3. **Apply** — edit the relevant cells in `draft.ipynb`.
+3. **Apply** — edit the relevant cells in `draft.ipynb`, writing all prose in the
+   `faoot-voice` voice.
 4. **Snapshot** — write `versions/vNNN.ipynb` (normalized) and `versions/vNNN.md`.
 5. **Log** — append a `journal.md` entry.
 6. **Register** — update `state.json`, `INDEX.md`, and `JOURNAL.md`; report a
@@ -129,6 +132,6 @@ When a thesis is **ready**:
 1. Copy `draft.ipynb` to `posts/<slug>/<slug>.ipynb`; confirm the front-matter cell
    (`title`, `description`, `date`, `categories`, `format.html.code-fold: true`,
    `jupyter: python3`).
-2. Move `assets/` in; run the `faoot-voice` pass on the prose.
+2. Move `assets/` in; give the whole notebook prose a final `faoot-voice` pass.
 3. Render, commit `docs/` + source, push (normal publishing flow).
 4. Set `status: published` and `publishedPost: posts/<slug>/`; log the promotion.
