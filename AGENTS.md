@@ -155,6 +155,18 @@ instead of re-running code. Consequences:
   convention to honor, and confirm with the maintainer if you need the actual
   file.
 
+## Agent skills
+
+Reusable agent instructions live under **`.opencode/skills/<skill-id>/SKILL.md`**
+(plus optional `reference/`, `scripts/`). OpenCode discovers them automatically;
+`.claude/skills/` and `.agents/skills/` are also recognized for compatibility.
+Current skills:
+
+- **`faoot-voice`** — write/edit prose in the author's voice. Its canonical corpus
+  is `posts/tutorial-mcglm/tutorial_mcglm.qmd`; annotated evidence is in
+  `.opencode/skills/faoot-voice/reference/voice-samples.md`. Load it before
+  drafting or substantially editing any post.
+
 ## Publishing / deployment
 
 There is **no CI workflow** (no `.github/` directory). Publishing is manual:
