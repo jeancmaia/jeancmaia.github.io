@@ -1,5 +1,8 @@
 ---
 title: 'MCGLM, a unified model for statistical analysis.'
+description: 'An introduction to the Multivariate Covariance Generalized Linear Model (MCGLM) and its Python library for fitting multivariate and non-independent responses.'
+date: '2023-02-06'
+categories: [statistics, mcglm, python]
 format:
   html:
     code-fold: true
