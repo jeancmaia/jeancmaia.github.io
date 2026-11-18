@@ -2,6 +2,7 @@
   {
     "listing": "/index.html",
     "items": [
+      "/posts/rethinking-generalization-error/rethinking-generalization-error.html",
       "/posts/hermes-xlr/hermes-xlr.html",
       "/posts/price-curves-agents/price_curves_agents.html",
       "/posts/tutorial-mcglm/tutorial_mcglm.html"
