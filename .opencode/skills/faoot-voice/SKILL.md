@@ -1,144 +1,133 @@
 ---
 name: Faoot's Writing Voice
-description: Write and edit prose in Jean Carlos Faoot Maia's ("Faoot") voice. Use for any blog post, essay, tutorial, or technical write-up — especially content in this repo or written on his behalf. Encodes his lexicon, sentence rhythm, rhetorical moves, and Quarto post conventions, distilled from the canonical MCGLM article.
+description: Write and edit prose in Jean Carlos Faoot Maia's ("Faoot") voice. Use for blog posts, essays, tutorials, and technical writing. Calibrated to the precise, measured prose and rhythm of the introduction to private article 0001, v031, with portable style guidance when the draft is unavailable.
 ---
 
 # Faoot's Writing Voice
 
-**Canonical corpus:** `posts/tutorial-mcglm/tutorial_mcglm.qmd` — *"MCGLM, a unified
-model for statistical analysis."* This post *is* the voice. Before writing anything
-substantial, re-read its prose sections (ignore the code cells) and treat it as the
-reference implementation. A curated, annotated set of excerpts lives in
-[`reference/voice-samples.md`](reference/voice-samples.md).
-
-**Adjacent registers (same author, lighter dialect):**
-`posts/price-curves-agents/price_curves_agents.ipynb` and
-`posts/hermes-xlr/hermes-xlr.ipynb` are more contemporary and structured — suitable
-for modern technical posts. **MCGLM is the default and the core; relax toward the
-others only when the brief calls for it.**
+**Primary calibration:** the introduction of the local, private article **0001,
+v031** (`_theses/0001-*/versions/v031.md`, from after the YAML front matter up to
+the first `###` heading). Read those seven paragraphs before substantial prose
+work when the draft is available, calibrating on rhythm and argument rather than
+the snapshot's older formatting. **The introduction alone is the style model:**
+do not infer the voice from the rest of the article. The draft is git-ignored;
+never quote, copy, or move its text into a tracked skill file, example, or post
+before the author approves promotion. When working without the private draft,
+use this skill and [`reference/style-map.md`](reference/style-map.md) as the
+portable specification. The older MCGLM post remains an example of the author's
+earlier writing, **not** the default voice for new prose.
 
 ## The voice in one line
 
-Formal, literary, unhurried — an enthusiast narrator who tells the *history of an
-idea* before showing the math, treats the field as a discipline with lineage and
-characters, and closes every result with a plain-language verdict.
+Precise, measured technical prose that takes a familiar idea, tests where it
+stops being enough, and leaves the reader with a practical distinction rather
+than a sweeping conclusion.
 
-## Voice fingerprint
+## Language and stance
 
-### Register & diction
-Elevated, essayistic academic prose with personal warmth. Reach for words such as:
-*epitomize, instill, allude to, harness, leverage, pliancy, pervasiveness, foment,
-universalize, postulation, primordial, subsequential, apparatus, entailed,
-emblematic, iconic, canonical, straightforward, proper, in-deep*. Prefer full forms;
-use contractions sparingly (`aren't`, `Let's`) rather than constantly.
+- Use clear academic English, not ceremonial or promotional language. Prefer
+  *fit, change, check, estimate, observed, held-out, possible, under a stated
+  condition* to ornamental synonyms. A specialized term earns its place by
+  doing explanatory work; define it in ordinary language at first use. Prefer
+  full forms to conversational contractions.
+- Start from a real conceptual problem or tension. State what is being compared
+  and why it matters before naming a result, listing methods, or giving a
+  formula. A direct question can sharpen the opening; do not require one.
+- Make technical distinctions explicit: which variable is held fixed, which
+  process changes, what is observed, and what the evidence does *not* establish.
+  Distinguish a mechanism, an observation, and an interpretation. Do not turn
+  a reported pattern into a universal law or a suggestive analogy into a cause.
+- Use *we* sparingly for shared reasoning or the article's route; otherwise
+  prefer the model, training procedure, experiment, or decision as subject.
+  Address the reader through the argument, not through chatty invitations.
+- Credit specific findings to researchers and cite them inline as `[n]` where
+  the source warrants it. Brief attribution supports the reasoning; a historical
+  timeline is not a required opening.
+- Reserve backticks for code identifiers, variables, and exact tokens; standard
+  domain vocabulary and conceptual nouns take plain text (regression,
+  classification, prompt, inference, capacity, error). Use italics sparingly on
+  the first introduction of a formal term — *double descent*, *grokking* — and
+  plain text everywhere else. Expand abbreviations at first mention; do not use
+  formatting in place of a definition, and use bold rarely to mark a distinction
+  that matters.
 
-### Sentence rhythm
-Long, multi-clause sentences built with **colons and semicolons**, periodically cut
-by a **short declarative verdict**. A typical paragraph is 2–4 long sentences plus a
-one-line judgment:
+## Rhythm and punctuation
 
-> *"The fitting looks good."* · *"That is a long-tail distribution."* ·
-> *"Displacement q as 1 as the best fit."*
+- Build paragraphs from connected sentences of varied length. The model
+  introduction uses roughly four to seven sentences per paragraph, not a fixed
+  quota. Typically begin with a clear claim, develop it through a definition,
+  example, or observation, then tighten the claim with a limit or consequence.
+  A short sentence can land after a longer explanation; it is not mandatory at
+  the end of every paragraph.
+- Alternate compact declaratives with medium and longer sentences that carry
+  real logical relationships. Use a colon to introduce a definition, question,
+  or concrete consequence; a semicolon for closely related claims; an em dash
+  for a brief qualification or apposition. Do not stack clauses just to sound
+  literary or replace all em dashes with spaced hyphens.
+- Favor transitions that advance the argument: *the same tension*, *with more
+  capacity*, *beyond sampling*, *in practice*, *yet*, *none of these*. Return
+  to an earlier distinction when the topic changes, rather than announcing a
+  disconnected new topic.
+- Use contrast to keep claims honest: *X can happen, but is not guaranteed*;
+  *Y changes the request, not the weights*. Such sentences should clarify
+  the particular case, not become a repeated verbal tic.
+- Let the final sentence of a movement name its practical boundary or
+  implication plainly. Avoid a grand reveal, a slogan every paragraph, or a
+  forced metric-and-verdict pattern when no result was measured.
 
-### Person & stance
-First-person plural for shared reasoning (*"we attempt"*, *"Let's leverage"*) and a
-second-person invitation to close (*"Do not hesitate to ... leave feedback. Thanks."*).
-Hedged and collegial, never salesy. Occasionally self-aware:
+## How the argument moves
 
-> *"...yet rephrased by myself, an enthusiast disciple..."*
+1. **Frame a familiar problem.** Give the baseline intuition and its test;
+   explain enough for a reader outside the subfield to follow.
+2. **Introduce the complication.** Show a concrete observation or result that
+   qualifies the baseline. Say under what conditions it was observed.
+3. **Draw the boundary.** Explain what follows and what does not. In particular,
+   do not imply that one phenomenon proves another merely because both involve
+   generalization, flexibility, or adaptation.
+4. **Move to use and evaluation.** Ask what changes when the trained system is
+   used, what stays fixed, and what evidence would check its output or action.
+5. **Offer a restrained route forward.** For an introduction, end by previewing
+   the article's actual sections and naming the question they answer. For a
+   body section, hand off to the next question. No obligatory invitation or
+   thank-you.
 
-### Punctuation & emphasis
-The colon and semicolon do heavy lifting. **Backticks wrap every technical term,
-model name, and function inline** — even mid-sentence and even for concepts
-(`quasi-likelihood`, `Tweedie`, `mc_id`, `Fisher Scoring`). A spaced hyphen ` - ` or
-` -- ` substitutes for the em-dash. Horizontal rules (`-----`) separate major
-movements of a piece.
+This is a reasoning pattern, **not** an instruction to make every piece about
+machine learning or to reproduce the seven-paragraph structure. Preserve the
+author's topic, evidence, and intended level of detail.
 
-## Signature moves
-
-1. **Open with history.** Anchor the topic in time and people before theory.
-   > *"Dated at the beginning of the 19th century and controversial about actual authorship, the least squares method established an optimization proposal."*
-   > *"Stepping ahead two years, Wedderburn, one of the authors of GLM, published in 1974 one of the most iconic papers of history."*
-   > *"Finally, in 2016, Bonat and Jørgensen published the MCGLM..."*
-2. **Name the literature.** Quote paper titles verbatim, credit authors, place the
-   reader inside the research.
-3. **"To cite a few."** Introduce open-ended enumerations this way — inline and
-   semicolon-separated (`identity`, `inverse` and `exponential-matrix`), not bullet lists.
-4. **Theory → method → code.** Explain the model, then the library/API, then the
-   worked examples.
-5. **A verdict per result.** After each fit, give a metric *and* a plain-language
-   conclusion.
-   > *"By the `pAIC` metric, the usual `Tweedie` variance function is a suitable pick."*
-   > *"The straightforward takeaway is: At day 0, the average response time is roughly 251 seconds."*
-6. **Interpret, don't report.** Translate coefficients into readable sentences:
-   > *"the higher the potassium level, the bigger grain size."*
-7. **Invite the reader out.** End with an offer and thanks.
-
-## Sentence recipes
-
-- **Historical frame:** `"Dated at [era], [subject] [did X], [context]."`
-- **Advance the timeline:** `"Stepping ahead [time], [author], [credential], published ..."`
-- **Introduce a set:** `"To cite a few[, examples]: X, Y and Z."`
-- **Set up a try:** `"Straight off the bat, we attempt fitting as ...: `identity` and `constant`."`
-- **Verdict:** `"By the `metric`, [subject] is a suitable pick / lightly better than ..."`
-- **Takeaway:** `"The straightforward takeaway is: [plain sentence]."`
-- **Close:** `"Do not hesitate to leverage [tool] on your analysis and leave feedback. Thanks."`
-
-## Tells to keep (idiosyncrasies)
-
-These are recognizable, low-frequency markers of the voice — preserve them where a
-native sentence calls for them. **Do not manufacture new errors**, and do not sand
-them away into blander prose unless the request is explicitly "clean copy".
-
-- **`As long as` = since / given that** → *"As long as statisticians cannot know the distribution upfront, the `quasi-likelihood` play an essential role..."*
-- **`allude to` = indicate / point to** → *"Days at 10.46 allude to total change..."*
-- **`instill` / `epitomize`** in the sense of present / exemplify.
-- **`lightly better`**, **`straight off the bat`**, **`It is plain to ...`**, **`We have got to set ...`**.
-
-## Structural conventions (Quarto posts)
-
-Match the repo's format; see `AGENTS.md` for the full post workflow.
-
-- Front matter: `title`, `description`, `date`, `categories`, `format.html.code-fold: true`, `jupyter: python3`.
-- Code cells open with `#| tags: []`; prose carries the narrative, code is illustration.
-- Heading depth: `###` for top sections, `####` for groups, `##### 1. ...` for numbered
-  subsections inside a tutorial.
-- Figures use captions: `![Binomial Regression](regressao_binomial.png)`.
-- Use `-----` rules to separate major movements; collect sources under a `Refs:` line
-  (raw URLs) and a final numbered `References` list, cited inline as `[13]`.
-- Tables are rendered as LaTeX `array` environments.
-
-## Do / Don't
+## Do / don't
 
 **Do**
-- Frame with history and lineage before the math.
-- Backtick every technical term.
-- Alternate long, colon/semicolon-rich sentences with a short verdict.
-- Give every result a metric and an interpretation.
-- Address the reader and close with an invitation.
+- Define an unfamiliar term where the reader first needs it, then use it
+  consistently.
+- Tie each finding to its scope and give the reader a concrete implication.
+- Separate training, deployment, and evaluation when the difference matters.
+- Use short, plain sentences for decisive limits after a nuanced explanation.
+- Check every factual claim, citation, number, and implied causal link.
 
 **Don't**
-- No emoji, no hype (*"game-changing"*, *"supercharge"*, *"unlock"*).
-- No choppy marketing fragments or bare bullet lists without prose framing.
-- Don't over-bold — backticks, not bold, carry emphasis.
-- Avoid generic AI filler: *"In today's fast-paced world"*, *"Let's dive in"*,
-  *"It's important to note"*, *"In conclusion"*.
-- Don't flatten the register into casual chat.
+- Don't imitate the older MCGLM register by forcing *epitomize*, *pliancy*,
+  *foment*, *allude to*, *straight off the bat*, or *to cite a few*.
+- Don't open with a ceremonial history of the field unless history is the point.
+- Don't claim a mechanism has been shown when only an outcome was observed.
+- Don't backtick conceptual nouns (backticks belong to code and exact tokens),
+  over-bold takeaways, or make every sentence a semicolon chain.
+- Don't use hype, generic AI transitions, unexplained acronyms, an automatic
+  reader invitation, or a closing “Thanks.”
 
-## Rewrites
+## Quarto conventions (when writing a post)
 
-| Generic | In voice |
-| --- | --- |
-| "The model performed well and the coefficient is significant." | "By the `pAIC`, the fitting is a suitable pick; moreover, the Wald test alludes that `Days` is statistically significant for the model." |
-| "DBSCAN groups points by density." | "Dated at the heart of density-based clustering, `DBSCAN` associates points by the density of their neighborhood, a `primordial` idea for the family of clustering models." |
-| "We fit a Poisson regression for the counts." | "As long as the outcome is a count, a `Poisson` model is a usual choice; straight off the bat, we fit it through the `Tweedie` variance function with power set as one." |
+Follow the post's existing format and `AGENTS.md`. The house style is separate
+from the voice: YAML front matter, inline numbered citations, code cells, and
+section headings depend on the document. In notebook posts keep the raw YAML
+cell first and preserve cell IDs and stored outputs when editing prose. Never
+use a private thesis draft as a source of publishable text before promotion.
 
-## Before you render: checklist
+## Before sharing prose
 
-- [ ] Opens with history or context, not a definition.
-- [ ] Technical terms are backticked inline.
-- [ ] Long sentences are interleaved with at least one short verdict.
-- [ ] Every result has a metric and a plain-language takeaway.
-- [ ] Ends with an invitation and thanks.
-- [ ] No emoji, no hype, no listicle sprawl.
-- [ ] Front matter matches the repo conventions.
+- [ ] Opens with a problem or tension, not decorative background.
+- [ ] Definitions are concrete; examples and citations support their claims.
+- [ ] Sentence lengths vary, and punctuation tracks logic rather than ornament.
+- [ ] Each conceptual leap states its conditions and limits.
+- [ ] The ending tells the reader what can be concluded or checked next.
+- [ ] Nothing from `_theses/` was copied into a tracked artifact.

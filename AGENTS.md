@@ -162,10 +162,12 @@ Reusable agent instructions live under **`.opencode/skills/<skill-id>/SKILL.md`*
 `.agents/skills/` is also recognized for compatibility.
 Current skills:
 
-- **`faoot-voice`** — write/edit prose in the author's voice. Its canonical corpus
-  is `posts/tutorial-mcglm/tutorial_mcglm.qmd`; annotated evidence is in
-  `.opencode/skills/faoot-voice/reference/voice-samples.md`. Load it before
-  drafting or substantially editing any post.
+- **`faoot-voice`** — write/edit prose in the author's voice. Its current style
+  reference is the introduction of private thesis 0001, v031 (when locally
+  available); the portable guidance is in
+  `.opencode/skills/faoot-voice/reference/style-map.md`. Load it before drafting
+  or substantially editing any post; do not copy private thesis text into
+  tracked files before promotion.
 
 ## Local thesis workshop
 

@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.36">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="dcterms.date" content="2026-11-17">
+<meta name="description" content="From the classical bias–variance tradeoff to overparameterized models, delayed generalization, and the compute budgets of modern language models.">
+
+<title>Rethinking Generalization Error: From Double Descent to Test-Time Compute – Faoot’s Lab</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting-845c23b38eaddc0f92fda52bfe77a8c8.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap-c51defa157ccb18095ba4b35bf459923.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script defer="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN" && texText && texText.data) {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+<link rel="stylesheet" href="../../styles.css">
+</head>
+
+<body class="nav-fixed fullcontent quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top quarto-banner">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../../index.html">
+    <span class="navbar-title">Faoot’s Lab</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../../about.html"> 
+<span class="menu-text">Jean Carlos Faoot Maia</span></a>
+  </li>  
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/jeancmaia"> <i class="bi bi-github" role="img">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Rethinking Generalization Error: From Double Descent to Test-Time Compute</h1>
+                  <div>
+        <div class="description">
+          From the classical bias–variance tradeoff to overparameterized models, delayed generalization, and the compute budgets of modern language models.
+        </div>
+      </div>
+                          <div class="quarto-categories">
+                <div class="quarto-category">statistics</div>
+                <div class="quarto-category">machine-learning</div>
+                <div class="quarto-category">llm</div>
+              </div>
+                  </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">November 17, 2026</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    
+<!-- main -->
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<p>Every machine learning textbook draws the same U-shaped curve for generalization error. Add parameters, and held-out error falls to a sweet spot before fitting noise pushes it back up, with the bias-variance tradeoff setting where the turn happens and a validation set finding it. Deep networks break that picture. With orders of magnitude more parameters than data points, they fit noisy training samples to zero error and still predict unseen data well. Their held-out error can even fall a second time after rising near perfect fitting, a pattern called <em>double descent</em> [1]. Parameter count, the classical proxy for capacity, turns out to be a poor guide to what these systems actually do.</p>
+<p>The puzzle sharpens in modern language models, where held-out error stops acting like one static number fixed when training ends. Cross-entropy loss on unseen text can drop smoothly across scale, yet prompted benchmark scores swing sharply across those same models. Extra compute spent at runtime can shift answers further without changing a single weight. What follows traces that progression through deep networks and the Transformer [2], from the breakdown of the textbook U-curve to the allocation of training and inference compute.</p>
+<section id="alexnet-and-the-limit-of-the-u-curve" class="level2">
+<h2 class="anchored" data-anchor-id="alexnet-and-the-limit-of-the-u-curve">1. AlexNet and the limit of the U-curve</h2>
+<p>A Welch Labs video on double descent [3] sent me back to AlexNet’s 2012 ImageNet result. The network had about 60 million parameters and learned from roughly 1.2 million labeled images [4], a ratio that by the classical account left plenty of freedom to memorize its training set. AlexNet won the challenge anyway. One model cannot trace a curve, so the result proves nothing on its own, yet it gave the textbook expectation a counterexample to explain.</p>
+<p>Generalization error—the error a model makes on unseen samples rather than the ones it trained on—is governed by the bias-variance tradeoff. Bias is the error of a model too simple to represent the pattern, while variance comes from sensitivity to the particular training sample and its noise. Added parameters lower bias until rising variance overtakes those gains and bends held-out error into the familiar U. AlexNet looked like a violation of that rule. The first explanation on offer credited explicit regularization: dropout, weight decay, and data augmentation were holding variance down where 60 million parameters would otherwise memorize everything [4].</p>
+<p>In 2017, a direct experiment broke that story. Train standard convolutional networks on images with random noise in place of the labels. They still reach zero training error [5]. A model that can fit random labels has enough capacity to memorize its training set with or without explicit regularizers. Putting the true labels back while removing the standard regularizers still produced networks that generalized to held-out images, although explicit regularization remained a useful tuning knob [5]. The result changed how to interpret generalization: a network’s ability to memorize a sample does not tell us how it will predict on unseen data.</p>
+<p>Measuring variance directly overturned the rest of the classical expectation. Across fully connected networks of growing width, total prediction variance fell as the networks widened past exact fitting, the opposite of what textbook variance curves predict [6]. The schematic below shows that trend across network widths.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="assets/figures/variance-by-source.png" class="img-fluid figure-img"></p>
+<figcaption>Prediction variance across network widths.</figcaption>
+</figure>
+</div>
+<p><em>Schematic of Neal et al.’s width experiments [6]: total prediction variance falls as networks widen past the vertical line marking the interpolation threshold. The curves show trends, not measured values. This is a redraw, not a reproduction; see <a href="https://arxiv.org/pdf/1810.08591">the measured results</a>.</em></p>
+<p>Sweeping model size lengthens the picture, because held-out error can fall again once a model fits its training set completely [1]. Change the variable from size to training time and related curves appear. Later studies mapped double descent as a joint property of capacity and optimization steps [7, 8]. The classical U-curve is only the left-hand side of that longer trajectory up to the interpolation threshold, where capacity is just enough to force training error to zero.</p>
+<p>At that threshold the fit is brittle. Every degree of freedom is pinned to the training points with little redundancy left to average away noise, so small changes in the sample move predictions sharply and held-out error spikes. Beyond that threshold a whole family of zero-error fits opens up, and the optimizer favors smoother, lower-norm members among them. That preference can lower held-out error a second time along the trajectory called double descent: a first descent, a peak at interpolation, and a second descent [1, 8]. The two panels below set the classical curve beside that trajectory.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="assets/figures/double-descent.png" class="img-fluid figure-img"></p>
+<figcaption>The classical curve beside a possible double-descent trajectory.</figcaption>
+</figure>
+</div>
+<p><em>The classical picture (left) and a possible double-descent trajectory (right). Left: expected error against model flexibility, with bias and variance. Right: training error (dashed) reaches zero at the interpolation threshold while held-out error (solid) can spike and then fall again. These panels are redrawn schematics, not AlexNet measurements or reproductions; see the original results in <a href="https://www.pnas.org/doi/10.1073/pnas.1903070116">Belkin et al.</a> [1] and <a href="https://arxiv.org/pdf/1912.02292">Nakkiran et al.</a> [8].</em></p>
+<p>The peak is not universal. Cleaner labels often flatten it into a plateau near interpolation [8], and the curve’s shape depends on the data and the training budget as well as the model family. A single model, AlexNet included, cannot establish where on that trajectory a run sits.</p>
+<p>To look for double descent, train a range of sizes on the same data, plot training and held-out error together with the point where training error first reaches zero marked, and see whether held-out error rises and then falls again. If training time is the variable instead of size, the comparison changes and the axis should say so.</p>
+<hr>
+</section>
+<section id="why-zero-error-fits-generalize" class="level2">
+<h2 class="anchored" data-anchor-id="why-zero-error-fits-generalize">2. Why zero-error fits generalize</h2>
+<p>The interpolation threshold is easiest to see with a polynomial. Suppose we observe eight distinct input values <span class="math inline">\(x_i\)</span> and their targets <span class="math inline">\(y_i\)</span>. A polynomial of degree at most seven threads all eight points uniquely. Allow one more degree and nothing pins the fit down anymore, because there are more coefficients than observations. If <span class="math inline">\(p_7(x)\)</span> fits the eight points, so does</p>
+<p><span class="math display">\[p_c(x)=p_7(x)+c\prod_{i=1}^{8}(x-x_i),\]</span></p>
+<p>for any value of <span class="math inline">\(c\)</span>. Because the added product vanishes at every observed input, each member of the family achieves zero training error while remaining free to disagree between the points, as three fits from the family show below.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="assets/figures/polynomial-fits.png" class="img-fluid figure-img"></p>
+<figcaption>Three exact fits through the same eight points.</figcaption>
+</figure>
+</div>
+<p><em>The eight observed points admit more than one exact fit. The dashed curve is the unique degree-7 interpolant, while the two solid curves add the term <span class="math inline">\(c\prod_{i=1}^{8}(x-x_i)\)</span> for different values of <span class="math inline">\(c\)</span>. All three pass through every point and disagree between them. A constructed example, not measured data.</em></p>
+<p>An exact training fit therefore does not identify a prediction at a new input. Because every value of the constant gives the same zero training loss, the training data cannot choose among these curves on their own. Sweeping the constant across the full family below highlights the smoothest member against its wigglier neighbors.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="assets/figures/polynomial-family.png" class="img-fluid figure-img"></p>
+<figcaption>The full family of exact fits, with the smoothest member highlighted.</figcaption>
+</figure>
+</div>
+<p><em>The full family of exact fits for the same eight points, with one curve per value of <span class="math inline">\(c\)</span> passing through every observed point. The highlighted member is the smoothest curve of the kind that training preferences favor, while its neighbors trade smoothness for brittle wiggles. A constructed example, not measured data.</em></p>
+<p>The choice among exact fits belongs to the training procedure, which favors smooth, low-norm curves over oscillatory ones. Change the initialization, the regularization, or the parameterization, and a different member wins. A deep network offers no closed-form <span class="math inline">\(p_c\)</span> to inspect, yet its optimization dynamics make a comparable choice inside a much messier space of zero-error weights.</p>
+<p>Even with every explicit penalty switched off, gradient descent started near zero drifts toward solutions of small magnitude rather than wandering blindly through zero-error fits, an effect known as <em>implicit regularization</em>. For linear classifiers on separable data, the iterates provably converge in direction to the maximum-margin separator [9].</p>
+<p>On small algorithmic tasks, a network can fit the training examples long before it predicts held-out examples correctly. Training accuracy nears perfection while validation accuracy stays near chance for tens of thousands of steps; only later does validation accuracy climb sharply [10]. This delayed generalization after an apparently complete training fit is called <em>grokking</em>. In toy models and small transformers, the late shift has been linked to structured, low-dimensional representations replacing memorization under weight decay [11]. The delayed improvement recalls epoch-wise double descent [8], but grokking occurs long after initial interpolation and need not show an early U-shaped validation curve [10].</p>
+<p>The error spike right at exact fitting comes from matrix conditioning rather than slow representation drift. When a linear fit has just enough parameters to match every data point, solving for the weights inverts a design matrix that is nearly singular, whose smallest singular values collapse toward zero along the directions in which the observed inputs vary least. Because exact fitting divides by those tiny singular values, even slight label noise gets amplified into large weight swings that destabilize predictions whenever a test input has weight along those poorly sampled directions [12]. Moving well past the threshold turns that geometry favorable: the extra dimensions added by overparameterization spread the minimum-norm solution out and lift the smallest nonzero singular values off zero, damping noise amplification so predictions stabilize. That argument is exact for linear least squares and an analogy for deep networks, and it explains why fragility concentrates right at the onset of interpolation.</p>
+<p>Some noise still gets memorized, and the theory of <em>benign overfitting</em> asks why that stored noise stays harmless [13]. In high-dimensional linear regression, capacity splits in two: a few dominant directions carry the signal while a long tail of low-variance directions absorbs the noise. Because fresh inputs barely excite that low-variance tail, the memorized noise has little effect on new predictions. Of the explanations in this section, benign overfitting makes the weakest case for a direct carry-over to deep networks: its signal-and-noise account is established in a linear setting.</p>
+</section>
+<section id="smooth-loss-bumpy-benchmarks" class="level2">
+<h2 class="anchored" data-anchor-id="smooth-loss-bumpy-benchmarks">3. Smooth loss, bumpy benchmarks</h2>
+<p>Language models are neural sequence predictors fitted on raw text [14]. Even so, a model’s average next-token loss can improve while its answers to one particular request get worse. Separating the two measurements requires notation for the request itself. Let <span class="math inline">\(X\)</span> be the context, <span class="math inline">\(T\)</span> the task stated in the prompt, and <span class="math inline">\(Y\)</span> the answer being evaluated. When <span class="math inline">\(Y\)</span> is a numeric score, task outcomes follow <span class="math inline">\(\mathbb{E}[Y \mid X,T]\)</span>, whereas generated text is modeled through probabilities over candidate responses.</p>
+<p>Overparameterization changes what a perfect training fit tells us: a model may still generalize to unseen inputs. For language models, the question extends to which tasks one set of pre-trained weights can handle. A single pre-trained model can respond to many tasks through text alone with no weight update. Instructions can specify the task directly in zero-shot prompting [15], or examples placed in the input can define it through <em>in-context learning</em> [16]. Double descent tracks held-out error across model capacities; prompting tests the same weights across different requests. Both call for measuring what a fitted model can do beyond its training examples.</p>
+<p>Across model families of growing scale, task benchmarks behave less smoothly than pre-training loss. A capability is called <em>emergent</em> when measured performance sits near chance in smaller models and rises sharply in larger ones [17]. Those jumps appear on specific prompted benchmarks, and no single threshold governs every skill. Lower average prediction loss still does not tell how well a model will handle a particular request, as the benchmark curves below show.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="assets/figures/emergent-abilities-across-scale.png" class="img-fluid figure-img"></p>
+<figcaption>Benchmark scores rising against training compute.</figcaption>
+</figure>
+</div>
+<p><em>Eight prompted-task benchmarks across model families, where several scores rise after a low-scoring range. Figure from <a href="https://arxiv.org/abs/2304.15004">Schaeffer, Miranda and Koyejo</a>, reproducing results from Wei et al.&nbsp;[17] (also <a href="https://www.researchgate.net/figure/Emergent-abilities-of-large-language-models-Language-model-families-display-sharp-and_fig1_370417780">shown on ResearchGate</a>). The horizontal axis is training FLOPs, and the scores describe behavior while leaving the mechanism open.</em></p>
+<p>Some requests trace a less orderly curve. On eleven datasets from the Inverse Scaling Prize, task performance <em>decreases</em> as model scale grows, a pattern called <em>inverse scaling</em> [18]. Prompts that embed a misleading distractor task or demonstrations that cue the wrong continuation can pull larger models further off target, exposing failures that remain local to the task and its evaluation while aggregate loss declines.</p>
+<p>Testing those eleven datasets on still larger models changes the picture again. Six of the eleven tasks recover along U-shaped curves that fall and then climb, while four keep degrading with scale and one improves throughout [19]. Expressed as error, the recovering tasks rise and then fall across scale in a curve that resembles the recovery phase of double descent visually, though without an established interpolation threshold or shared mechanism. Wei and colleagues hypothesize that medium-sized models pick up an embedded distractor task that larger models learn to ignore, while noting that this mechanism goes untested and that several recovering tasks remain near chance unless demonstrations or reasoning prompts are added [19].</p>
+<p>Even a sharp benchmark jump needs care. A discontinuous score such as exact match gives zero credit until the whole output is right, which can turn smooth growth in token probabilities <span class="math inline">\(P(y_t\mid y_{&lt;t},X,T)\)</span> across a multi-step answer into an abrupt step on the curve [20]. The jump can still reflect real new behavior. The plot alone cannot tell whether the underlying change was sudden or gradual. To assess on-the-fly adaptation, we also have to check how predictions behave when the task and examples in the prompt change.</p>
+<p>Average loss on held-out text declines smoothly while those task scores stay volatile. Part of the difference is the training regime. Classical benchmarks cycle over a finite dataset until the model fits it to zero error, producing the interpolation peak of Section 1, whereas frontier language models train in a streaming regime over trillions of tokens and rarely read the same sequence twice. With no fixed sample fit again and again, no finite-data interpolation threshold forms and aggregate loss follows a smooth trend; repetition and local overfitting still occur, though within the measured range the loss stays predictable.</p>
+<p><em>Training Compute-Optimal Large Language Models</em> gives that trend a fitted form for transformer language models [21]. Commonly called the Chinchilla scaling law, the relation predicts the expected loss of a planned run before training begins:</p>
+<p><span class="math display">\[L(N,D)=E+\frac{A}{N^{\alpha}}+\frac{B}{D^{\beta}}.\]</span></p>
+<p>Here <span class="math inline">\(N\)</span> counts total model parameters, <span class="math inline">\(D\)</span> counts training tokens, and <span class="math inline">\(L\)</span> is the expected cross-entropy loss [21]. The fitted floor <span class="math inline">\(E\)</span> summarizes what remains under this parametric model of the data and should not be read as a universal constant for natural language. Parameter and data terms decay as power laws with exponents of about <span class="math inline">\(\alpha=0.34\)</span> and <span class="math inline">\(\beta=0.28\)</span>. The relation is an empirical fit and holds within the range that was studied.</p>
+<p>Under the approximate training-compute relation <span class="math inline">\(C\approx6ND\)</span>, the fit favors growing tokens and parameters together when <em>training loss under a fixed training budget</em> is the objective. The Chinchilla experiments put that balance near 20 training tokens per parameter in their setting [21]. That ratio prices training compute alone and leaves out the cost of serving the model repeatedly afterward, as the comparison below illustrates.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="assets/figures/chinchilla-data-optimal-scaling.png" class="img-fluid figure-img"></p>
+<figcaption>Selected models by parameter count and training-token-to-parameter ratio.</figcaption>
+</figure>
+</div>
+<p><em>Token-to-parameter ratios for selected models, drawn from the estimates compiled by <a href="https://lifearchitect.ai/chinchilla/">Alan D. Thompson, LifeArchitect.ai</a> (December 2023). This is an annotated comparison, not Hoffmann et al.’s fitted loss surface: some model values are estimates, and moving to the right does not by itself imply a poor deployment choice.</em></p>
+<p>So a compact model can be trained on far more data than the training-compute optimum suggests. Llama 3 8B was trained on more than 15 trillion tokens [22], roughly 90 times the 20-token-per-parameter reference. The trade is deliberate. Extra compute before deployment yields a smaller model to serve afterward. Over-training can improve a compact model’s performance, though whether it crossed a particular emergent threshold must still be checked on the prompted task.</p>
+<p>Between pre-training and serving sits post-training. Supervised instruction tuning and preference feedback turn a base model into an assistant [23] or specialize it to a domain. Pre-trained language models have low intrinsic dimension on downstream tasks, so fine-tuning can succeed inside a small subspace rather than adjusting every weight independently [24]. Low-rank adaptation (LoRA) exploits low-rank structure in weight updates by freezing the pre-trained matrices and training small rank-decomposition factors in the attention projections, demonstrated at GPT-3 175B scale [25]. By analogy to the low-dimensional representations seen in grokking, adaptation acts inside a compact subspace, though here the evidence comes from pre-trained subspace geometry rather than delayed algorithmic training.</p>
+<p>A second trade happens at inference time with the weights held fixed. A single generation draws one sample from the next-token distribution and pass@1 scores that attempt [26], whereas extra inference compute generates N candidate answers and selects among them. Where the task admits an automatic check such as unit tests or an exact answer, a trained verifier can rank the candidates in best-of-N selection [27]. For reasoning problems, eliciting intermediate steps via <em>chain-of-thought</em> prompting [28] and returning the majority answer across sampled chains needs no learned verifier at all, an approach called self-consistency [29]. The weights stay fixed in every scheme while sample count and selection rule vary.</p>
+<p>Selection can also work below the level of the full answer. A process reward model scoring each intermediate step can prune failing branches and continue along stronger ones, turning one pass into a search over reasoning paths. The trade is explicit. Extra tokens and latency buy deeper search, and the returns concentrate on verifiable tasks, since without a reliable check more samples reproduce the same errors at higher cost.</p>
+<p>At fixed weights, a larger inference budget changes the distribution over answers and reduces variance across attempts on verifiable tasks. Under a latency and cost constraint, correctness becomes partly purchasable. In the studied setting, allocating that budget well let a smaller model surpass one fourteen times larger at matched compute on problems the base model already solves some of the time [30].</p>
+<p>The behavior being scaled at runtime can itself be trained. DeepSeek-R1 was optimized against verifiable rewards, and the resulting policy produces longer, self-checking reasoning traces during generation [31]. The pre-training law and the inference budget measure different quantities: the law forecasts the loss of the model being trained, while accuracy on a prompted task depends on how that model is queried and checked.</p>
+</section>
+<section id="where-to-spend-compute" class="level2">
+<h2 class="anchored" data-anchor-id="where-to-spend-compute">4. Where to spend compute</h2>
+<p>Classical statistical learning treated capacity as a hazard. It taught practitioners to add only enough parameters to capture the signal while regularizing hard and stopping when validation error first turned upward. From AlexNet through the Chinchilla fit, overparameterized models show where that posture breaks down, because extra dimensions give gradient descent room to settle onto smooth, low-norm solutions instead of brittle threshold fits. A prompt can then specify a new task without touching those weights at all through the conditional target <span class="math inline">\(\mathbb{E}[Y \mid X,T]\)</span> of Section 3.</p>
+<p>For practitioners, held-out error is no longer a static number fixed in the weights when training ends. It becomes dynamic at three levels: across pre-training runs, single-pass streaming and inference-optimal over-training follow smooth power laws that trade upfront compute against serving cost. Across tasks, accuracy can fall before recovering with scale and jump sharply under strict scoring rules. At runtime, search and verification turn test-time compute into an active dial for cutting error when checking supports it.</p>
+<p>Monitoring habits shift alongside that behavior. Tracking continuous token loss beside exact-match scores during training and adaptation keeps steady probability gains from looking like stagnation. When a validation curve stalls on a structured problem, continuing to measure can catch late drops that early stopping would miss. For prediction under a defined sampling process, cross-validation, RMSE, and AUC remain the right instruments, whereas multi-step systems that call tools and change state have to be judged through outcomes and constraint checks.</p>
+<p>The work now includes deciding where capability should live: compressed into the weights during pre-training, added through low-rank updates afterward, or searched and verified at the moment of inference. That budget question turns on what can actually be checked. Post-training rewards and test-time search reliably cut error where unit tests or explicit state constraints can reject bad candidates. Deep models can carry enough flexibility to take up a new task from a prompt without changing weights. On open-ended tasks without an automatic verifier, that on-the-fly adaptation still needs an external check: following the prompt does not establish that the answer describes the situation correctly.</p>
+<blockquote class="blockquote">
+<p>“The impediment to action advances action. What stands in the way becomes the way.”</p>
+<p>—Marcus Aurelius, <em>Meditations</em>, V.20 (Gregory Hays translation)</p>
+</blockquote>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<ol type="1">
+<li>Belkin, M., Hsu, D., Ma, S. and Mandal, S. (2019). “Reconciling modern machine-learning practice and the bias–variance trade-off.” https://www.pnas.org/doi/10.1073/pnas.1903070116</li>
+<li>Vaswani, A. et al.&nbsp;(2017). “Attention Is All You Need.” https://arxiv.org/abs/1706.03762</li>
+<li>Welch Labs (2025). “What the Books Get Wrong about AI [Double Descent].” YouTube. https://www.youtube.com/watch?v=z64a7USuGX0</li>
+<li>Krizhevsky, A., Sutskever, I. and Hinton, G. E. (2012). “ImageNet Classification with Deep Convolutional Neural Networks.” https://papers.nips.cc/paper_files/paper/2012/hash/c399862d3b9d6b76c8436e924a68c45b-Abstract.html</li>
+<li>Zhang, C., Bengio, S., Hardt, M., Recht, B. and Vinyals, O. (2017). “Understanding deep learning requires rethinking generalization.” https://arxiv.org/abs/1611.03530</li>
+<li>Neal, B., Mittal, S., Baratin, A., Tantia, V., Scicluna, M., Lacoste-Julien, S. and Mitliagkas, I. (2019). “A Modern Take on the Bias-Variance Tradeoff in Neural Networks.” https://arxiv.org/abs/1810.08591</li>
+<li>Lafon, M. and Thomas, A. (2024). “Understanding the Double Descent Phenomenon in Deep Learning.” https://arxiv.org/abs/2403.10459</li>
+<li>Nakkiran, P. et al.&nbsp;(2020). “Deep Double Descent: Where Bigger Models and More Data Hurt.” https://arxiv.org/abs/1912.02292</li>
+<li>Soudry, D., Hoffer, E., Nacson, M. S., Gunasekar, S. and Srebro, N. (2018). “The Implicit Bias of Gradient Descent on Separable Data.” Journal of Machine Learning Research 19(70), 1–57. https://arxiv.org/abs/1710.10345</li>
+<li>Power, A. et al.&nbsp;(2022). “Grokking: Generalization Beyond Overfitting on Small Algorithmic Datasets.” https://arxiv.org/abs/2201.02177</li>
+<li>Liu, Z., Kitouni, O., Nolte, N., Michaud, E. J., Tegmark, M. and Williams, M. (2022). “Towards Understanding Grokking: An Effective Theory of Representation Learning.” Advances in Neural Information Processing Systems 35, 34651–34663. https://arxiv.org/abs/2205.10343</li>
+<li>Hastie, T., Montanari, A., Rosset, S. and Tibshirani, R. J. (2022). “Surprises in High-Dimensional Ridgeless Least Squares Interpolation.” The Annals of Statistics 50(2), 949–986. https://arxiv.org/abs/1903.08560</li>
+<li>Bartlett, P. L., Long, P. M., Lugosi, G. and Tsigler, A. (2020). “Benign Overfitting in Linear Regression.” Proceedings of the National Academy of Sciences 117(48), 30063–30070. https://arxiv.org/abs/1906.11300</li>
+<li>Bengio, Y., Ducharme, R., Vincent, P. and Jauvin, C. (2003). “A Neural Probabilistic Language Model.” https://www.jmlr.org/papers/v3/bengio03a.html</li>
+<li>Radford, A. et al.&nbsp;(2019). “Language Models are Unsupervised Multitask Learners.” https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf</li>
+<li>Brown, T. B. et al.&nbsp;(2020). “Language Models are Few-Shot Learners.” https://arxiv.org/abs/2005.14165</li>
+<li>Wei, J. et al.&nbsp;(2022). “Emergent Abilities of Large Language Models.” https://arxiv.org/abs/2206.07682</li>
+<li>McKenzie, I. R. et al.&nbsp;(2023). “Inverse Scaling: When Bigger Isn’t Better.” Transactions on Machine Learning Research. https://arxiv.org/abs/2306.09479</li>
+<li>Wei, J., Kim, N., Tay, Y. and Le, Q. V. (2023). “Inverse Scaling Can Become U-Shaped.” Transactions on Machine Learning Research. https://arxiv.org/abs/2211.02011</li>
+<li>Schaeffer, R., Miranda, B. and Koyejo, S. (2023). “Are Emergent Abilities of Large Language Models a Mirage?” https://arxiv.org/abs/2304.15004</li>
+<li>Hoffmann, J. et al.&nbsp;(2022). “Training Compute-Optimal Large Language Models.” Advances in Neural Information Processing Systems 35, 30016–30030. https://arxiv.org/abs/2203.15556</li>
+<li>Dubey, A. et al.&nbsp;(2024). “The Llama 3 Herd of Models.” arXiv. https://arxiv.org/abs/2407.21783</li>
+<li>Ouyang, L. et al.&nbsp;(2022). “Training language models to follow instructions with human feedback.” https://arxiv.org/abs/2203.02155</li>
+<li>Aghajanyan, A., Zettlemoyer, L. and Gupta, S. (2021). “Intrinsic Dimensionality Explains the Effectiveness of Language Model Fine-Tuning.” Proceedings of the 59th Annual Meeting of the Association for Computational Linguistics (ACL), 7319–7328. https://arxiv.org/abs/2012.13255</li>
+<li>Hu, E. J., Shen, Y., Wallis, P., Allen-Zhu, Z., Li, Y., Wang, S., Wang, L. and Chen, W. (2022). “LoRA: Low-Rank Adaptation of Large Language Models.” International Conference on Learning Representations (ICLR). https://arxiv.org/abs/2106.09685</li>
+<li>Chen, M. et al.&nbsp;(2021). “Evaluating Large Language Models Trained on Code.” arXiv. https://arxiv.org/abs/2107.03374</li>
+<li>Cobbe, K. et al.&nbsp;(2021). “Training Verifiers to Solve Math Word Problems.” arXiv. https://arxiv.org/abs/2110.14168</li>
+<li>Wei, J. et al.&nbsp;(2022). “Chain-of-Thought Prompting Elicits Reasoning in Large Language Models.” https://arxiv.org/abs/2201.11903</li>
+<li>Wang, X. et al.&nbsp;(2023). “Self-Consistency Improves Chain of Thought Reasoning in Language Models.” International Conference on Learning Representations (ICLR). https://arxiv.org/abs/2203.11171</li>
+<li>Snell, C., Lee, J., Xu, K. and Kumar, A. (2024). “Scaling LLM Test-Time Compute Optimally can be More Effective than Scaling Model Parameters.” arXiv. https://arxiv.org/abs/2408.03314</li>
+<li>DeepSeek-AI (2025). “DeepSeek-R1 incentivizes reasoning in LLMs through reinforcement learning.” https://www.nature.com/articles/s41586-025-09422-z</li>
+</ol>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
