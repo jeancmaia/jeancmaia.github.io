@@ -8,7 +8,8 @@ description: Write and edit prose in Jean Carlos Faoot Maia's ("Faoot") voice. U
 **Primary calibration:** the introduction of the local, private article **0001,
 v031** (`_theses/0001-*/versions/v031.md`, from after the YAML front matter up to
 the first `###` heading). Read those seven paragraphs before substantial prose
-work when the draft is available. **The introduction alone is the style model:**
+work when the draft is available, calibrating on rhythm and argument rather than
+the snapshot's older formatting. **The introduction alone is the style model:**
 do not infer the voice from the rest of the article. The draft is git-ignored;
 never quote, copy, or move its text into a tracked skill file, example, or post
 before the author approves promotion. When working without the private draft,
@@ -42,11 +43,13 @@ than a sweeping conclusion.
 - Credit specific findings to researchers and cite them inline as `[n]` where
   the source warrants it. Brief attribution supports the reasoning; a historical
   timeline is not a required opening.
-- Backtick technical terms when introducing or emphasizing them, as in
-  `generalization`, `inference`, or `capacity`; use ordinary type for surrounding
-  explanation. Expand abbreviations at first mention. Do not backtick every
-  noun or use formatting in place of a definition. Use italics or bold rarely
-  to mark a distinction that matters.
+- Reserve backticks for code identifiers, variables, and exact tokens; standard
+  domain vocabulary and conceptual nouns take plain text (regression,
+  classification, prompt, inference, capacity, error). Use italics sparingly on
+  the first introduction of a formal term — *double descent*, *grokking* — and
+  plain text everywhere else. Expand abbreviations at first mention; do not use
+  formatting in place of a definition, and use bold rarely to mark a distinction
+  that matters.
 
 ## Rhythm and punctuation
 
@@ -107,8 +110,8 @@ author's topic, evidence, and intended level of detail.
   *foment*, *allude to*, *straight off the bat*, or *to cite a few*.
 - Don't open with a ceremonial history of the field unless history is the point.
 - Don't claim a mechanism has been shown when only an outcome was observed.
-- Don't backtick all technical nouns, over-bold takeaways, or make every
-  sentence a semicolon chain.
+- Don't backtick conceptual nouns (backticks belong to code and exact tokens),
+  over-bold takeaways, or make every sentence a semicolon chain.
 - Don't use hype, generic AI transitions, unexplained acronyms, an automatic
   reader invitation, or a closing “Thanks.”
 
